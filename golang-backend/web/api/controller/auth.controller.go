@@ -40,9 +40,6 @@ func (ac *AuthController) HandleBeginGoogleOAuthLogin(c *fiber.Ctx) error {
 	redirectURI := ac.Env.GoogleOAuthRedirectURI
 	scope := "profile email"
 
-	fmt.Println("Google OAuth Client ID:", googleClientID)
-	fmt.Println("Google OAuth Redirect URI:", redirectURI)
-
 	oauthURL := fmt.Sprintf(
 		"https://accounts.google.com/o/oauth2/v2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s",
 		googleClientID,
@@ -80,10 +77,6 @@ func (ac *AuthController) HandleGoogleAuthCallback(c *fiber.Ctx) error {
 	c.ClearCookie("google_oauth_state")
 
 	googleConfig := ac.Config
-
-	fmt.Println(state)
-	fmt.Println(cookieState)
-	fmt.Println(code)
 
 	token, err := googleConfig.Exchange(context.Background(), code)
 	if err != nil {

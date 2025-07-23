@@ -24,6 +24,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { CreateGameDialog } from "./CreateGame";
 import { Navigate, useNavigate } from "react-router";
+import { NoGamesPlaceholder } from "./NoGamesPlaceholder";
 
 // Mock data for demonstration
 const onlinePlayers = [
@@ -173,6 +174,10 @@ function Games(props: { games: Game[] }) {
   const handleEnterGameRoom = (gameId: string) => {
     navigate("/games/" + gameId);
   };
+
+  if (props.games.length === 0) {
+    return <NoGamesPlaceholder />
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">

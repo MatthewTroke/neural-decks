@@ -85,7 +85,6 @@ export function CreateGameDialog() {
     },
     onError: (error) => {
       console.error(error);
-      queryClient.invalidateQueries({ queryKey: ['games'] });
     },
   });
 

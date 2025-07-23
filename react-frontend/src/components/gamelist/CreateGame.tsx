@@ -28,6 +28,8 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
+import { Spinner } from "@/components/ui/spinner";
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -49,6 +51,7 @@ const formSchema = z.object({
 export function CreateGameDialog() {
   const [open, setOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const queryClient = useQueryClient()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,6 +81,7 @@ export function CreateGameDialog() {
     onSuccess: () => {
       setOpen(false);
       form.reset();
+      queryClient.invalidateQueries({ queryKey: ['games'] }); // Invalidate the games query to refresh the list
     },
     onError: (error) => {
       console.error(error);
@@ -275,7 +279,7 @@ export function CreateGameDialog() {
             </Form>
           </>
         ) : (
-          <div>Loading</div>
+          <Spinner />
         )}
       </DialogContent>
     </Dialog>

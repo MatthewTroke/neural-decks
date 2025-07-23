@@ -6,9 +6,9 @@ Neural Decks is a real-time online card game you can play with friends or random
 
 Install dependencies & start the backend
 ```bash
-cd golang-backend
+cd golang-backend/web
 go mod tidy
-go run web/cmd/http/main.go
+go run cmd/http/main.go
 ```
 Install dependencies  & start the frontend
 ```bash

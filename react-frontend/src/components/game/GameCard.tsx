@@ -1,5 +1,6 @@
 import { SelectableCard } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Crown } from "lucide-react";
 
 interface CardProps {
   cardId: string;
@@ -31,18 +32,23 @@ export default function GameCard(props: CardProps) {
       onClick={() => (isDisabled ? () => {} : onCardClick(cardId))}
       key={cardId}
       className={cn(
-        "aspect-[3/4] w-36 h-48 flex items-start p-3 transition-all relative overflow-hidden",
+        "aspect-[3/4] w-36 h-48 flex items-start p-3 transition-all relative",
         !isDisabled && "cursor-pointer hover:ring-2 hover:ring-primary",
         isDisabled && "cursor-not-allowed opacity-70",
         isBlack
           ? "bg-black text-white"
           : "bg-white text-black border-2 border-black",
-        isWinningCard ? "bg-blue-500 text-white" : "",
+        isWinningCard ? "bg-primary text-white" : "",
         { "bg-primary": selected }
       )}
       aria-disabled={isDisabled ? true : false}
       aria-selected={selected}
     >
+      {isWinningCard && (
+        <span className="absolute -right-3 -top-4 z-10 rotate-30 text-yellow-400 animate-bounce">
+          <Crown />
+        </span>
+      )}
       <div className="w-full">
         <p
           className={cn(

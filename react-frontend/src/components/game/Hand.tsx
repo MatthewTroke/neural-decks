@@ -1,7 +1,9 @@
 import GameCard from "@/components/game/GameCard";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
+import { Button } from "../ui/button";
 
 export default function Hand(props: {
   game: Game;
@@ -13,6 +15,8 @@ export default function Hand(props: {
   const { user } = useAuth();
 
   const player = props.game.Players.find((p) => p.UserID === user?.user_id);
+  const playerIsCardCzar =
+    props.game.Players.find((p) => p.IsCardCzar)?.UserID === player?.UserID;
 
   if (!player) {
     return <div>no cards!</div>;
@@ -22,12 +26,22 @@ export default function Hand(props: {
     return <div>Waiting for game to start...</div>;
   }
 
-  const disabled = Boolean(player.PlacedCard);
+  const disabled = Boolean(player.PlacedCard) || playerIsCardCzar;
 
-  const onCardClick = (cardId: string) => {
+  const onSelectCard = (cardId: string) => {
     const card = player.Deck.find((card: Card) => card.ID === cardId);
 
-    setSelectedCardId(card?.ID);
+    setSelectedCardId((id) => (id === card?.ID ? undefined : card?.ID));
+
+    // if (card) {
+    //   props.handlePlayCard(card);
+    // }
+  };
+
+  const onChooseChard = () => {
+    const card = player.Deck.find((card: Card) => card.ID === selectedCardId);
+
+    console.log({ card });
 
     if (card) {
       props.handlePlayCard(card);
@@ -35,24 +49,26 @@ export default function Hand(props: {
   };
 
   const rotations = [
-    "rotate-300",
-    "rotate-320",
-    "rotate-340",
-    "rotate-0",
-    "rotate-20",
-    "rotate-40",
-    "rotate-60",
+    "rotate-295",
+    "rotate-315",
+    "rotate-335",
+    "-rotate-5",
+    "rotate-15",
+    "rotate-35",
+    "rotate-55",
   ];
 
   return (
     <div className="relative">
-      <h3 className="block md:hidden text-lg font-semibold mb-3">Your Hand</h3>
+      <h3 className="text-center sm:text-left block md:hidden text-lg font-semibold mb-3">
+        Your Hand
+      </h3>
       <div className="relative md:hidden flex flex-wrap gap-4 justify-center sm:justify-start">
         {player.Deck?.map((card) => (
           <>
             <GameCard
               key={card.ID}
-              onCardClick={onCardClick}
+              onCardClick={onSelectCard}
               cardId={card.ID}
               value={card.CardValue}
               isDisabled={disabled}
@@ -62,30 +78,49 @@ export default function Hand(props: {
         ))}
       </div>
 
-      <div className="hidden md:block fixed bottom-[500px] left-1/2">
-        <div className="rotate-[-5deg] -ml-20">
-          {player.Deck?.map((card, index) => (
-            <div
-              className={cn(
-                "absolute",
-                "w-[144px]",
-                "h-[192px]",
-                "origin-[40px_500px]",
-                "hover:z-10",
-                rotations[index]
-              )}
+      <div className="hidden md:block fixed bottom-[500px] left-[calc(50vw-3rem)]">
+        {player.Deck?.map((card, index) => (
+          <div
+            className={cn(
+              "absolute",
+              "w-[144px]",
+              "h-[192px]",
+              "origin-[40px_500px]",
+              "hover:z-10",
+              rotations[index]
+            )}
+          >
+            <GameCard
+              key={card.ID}
+              onCardClick={onSelectCard}
+              cardId={card.ID}
+              value={card.CardValue}
+              isDisabled={disabled}
+              selected={selectedCardId === card.ID}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-center my-8 w-full md:fixed bottom-32 md:left-[calc(50vw-6rem)] gap-2 md:w-48">
+        {playerIsCardCzar ? (
+          <span>You are the Card Czar!</span>
+        ) : (
+          <>
+            <Button disabled={!selectedCardId} onClick={onChooseChard}>
+              <Check />
+              Choose
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!selectedCardId}
+              onClick={() => setSelectedCardId(undefined)}
             >
-              <GameCard
-                key={card.ID}
-                onCardClick={onCardClick}
-                cardId={card.ID}
-                value={card.CardValue}
-                isDisabled={disabled}
-                selected={selectedCardId === card.ID}
-              />
-            </div>
-          ))}
-        </div>
+              <X />
+              Cancel
+            </Button>
+          </>
+        )}
       </div>
 
       {disabled && (

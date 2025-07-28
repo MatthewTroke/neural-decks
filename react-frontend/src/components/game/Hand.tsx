@@ -59,11 +59,12 @@ export default function Hand(props: {
   ];
 
   return (
-    <div className="relative">
-      <h3 className="text-center sm:text-left block md:hidden text-lg font-semibold mb-3">
+    <div className="absolute bottom-0 flex flex-col justify-center items-center">
+      <h3 className="text-center sm:text-left text-lg font-semibold mb-3">
         Your Hand
       </h3>
-      <div className="relative md:hidden flex flex-wrap gap-4 justify-center sm:justify-start">
+
+      <div className="relative lg:hidden flex flex-wrap gap-4 justify-center m-4">
         {player.Deck?.map((card) => (
           <>
             <GameCard
@@ -78,13 +79,13 @@ export default function Hand(props: {
         ))}
       </div>
 
-      <div className="hidden md:block fixed bottom-[500px] left-[calc(50vw-3rem)]">
+      <div className="hidden lg:block">
         {player.Deck?.map((card, index) => (
           <div
             className={cn(
               "absolute",
-              "w-[144px]",
-              "h-[192px]",
+              "bottom-[16rem]",
+              "-ml-8",
               "origin-[40px_500px]",
               "hover:z-10",
               rotations[index]
@@ -102,9 +103,11 @@ export default function Hand(props: {
         ))}
       </div>
 
-      <div className="flex justify-center my-8 w-full md:fixed bottom-32 md:left-[calc(50vw-6rem)] gap-2 md:w-48">
+      <div className="flex gap-2 mb-8">
         {playerIsCardCzar ? (
-          <span>You are the Card Czar!</span>
+          <span className="text-center">
+            You are the Card Czar! Choose a winning card.
+          </span>
         ) : (
           <>
             <Button disabled={!selectedCardId} onClick={onChooseChard}>
@@ -122,14 +125,6 @@ export default function Hand(props: {
           </>
         )}
       </div>
-
-      {disabled && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <span className="text-white text-xl font-bold">
-            Card Czar Picking
-          </span>
-        </div>
-      )}
     </div>
   );
 }

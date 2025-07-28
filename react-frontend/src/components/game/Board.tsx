@@ -1,14 +1,15 @@
 import { useAuth } from "@/context/AuthContext";
 import GameCard from "./GameCard";
-import { Card } from "../ui/card";
 
 export default function Board(props: {
   game: Game;
   handlePickWinningCard: (cardId: string) => void;
 }) {
-  let { user } = useAuth();
+  const { user } = useAuth();
 
-  let player = props.game.Players.find((p: any) => p.UserID === user?.user_id);
+  const player = props.game.Players.find(
+    (p: any) => p.UserID === user?.user_id
+  );
   // let isCardCzar = player?.IsCardCzar;
   // let isWhiteCardDisabled =
   //   !isCardCzar ||
@@ -17,7 +18,7 @@ export default function Board(props: {
   //     props.game.RoundStatus === "CardCzarPickingWinningCard"
   //   );
 
-  let hasRoundWinner =
+  const hasRoundWinner =
     props.game.RoundWinner &&
     props.game.Status === "InProgress" &&
     props.game.RoundStatus === "CardCzarChoseWinningCard";
@@ -50,29 +51,27 @@ export default function Board(props: {
 
   return (
     <div>
-
-
-      <Card key={props.game.ID} className="p-6">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <div className="flex items-start">
-              <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-                <RenderBlackCard card={props.game.BlackCard} />
-                {props.game.WhiteCards.map((card) => (
-                  <GameCard
-                    key={card.ID}
-                    cardId={card.ID}
-                    value={card.CardValue}
-                    onCardClick={() => onWhiteCardClick(card)}
-                    isDisabled={false}
-                    isWinningCard={winningCard?.ID === card.ID ? true : false}
-                  />
-                ))}
-              </div>
+      {/* <Card key={props.game.ID} className="p-6"> */}
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <div className="flex items-start">
+            <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+              <RenderBlackCard card={props.game.BlackCard} />
+              {props.game.WhiteCards.map((card) => (
+                <GameCard
+                  key={card.ID}
+                  cardId={card.ID}
+                  value={card.CardValue}
+                  onCardClick={() => onWhiteCardClick(card)}
+                  isDisabled={false}
+                  isWinningCard={winningCard?.ID === card.ID ? true : false}
+                />
+              ))}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
+      {/* </Card> */}
     </div>
   );
 }
@@ -96,6 +95,7 @@ function RenderBlackCard(props: RenderBlackCardProps) {
       onCardClick={() => {}}
       isDisabled
       isBlack
+      scalable={false}
     />
   );
 }

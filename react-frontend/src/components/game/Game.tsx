@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useParams } from "react-router";
-import useWebSocket from "react-use-websocket";
-import { useAuth } from "@/context/AuthContext";
-import { Navbar } from "@/components/shared/Navbar";
 import Board from "@/components/game/Board";
 import PlayerHand from "@/components/game/Hand";
 import PlayerList from "@/components/game/PlayerList";
-import { Card, CardContent } from "../ui/card";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 import { AvatarImage } from "@radix-ui/react-avatar";
-import { Badge, Crown, Users } from "lucide-react";
+import { Crown, Users } from "lucide-react";
+import { useState } from "react";
+import { useParams } from "react-router";
+import useWebSocket from "react-use-websocket";
+import { SiteHeader } from "../site-header";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Card, CardContent } from "../ui/card";
 
 export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -116,47 +116,51 @@ export default function GameComponent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <Navbar />
+    <>
+      <SiteHeader title={`Game: ${game.Name}`} />
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Sidebar - stacks on mobile (top), side by side on desktop */}
-          <div className="lg:col-span-4 order-1 lg:order-2">
-            {/* Player List and Chat in 2 columns on small screens, but still within the sidebar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 mb-4 lg:mb-0">
-              {/* Player List */}
-              <div className="sm:col-span-2">
-                <PlayerList
-                  handleJoinGame={handleJoinGame}
-                  handleBeginGame={handleBeginGame}
-                  handleContinueRound={handleContinueRound}
-                  game={game}
-                />
-              </div>
+      <div className="flex flex-col">
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Sidebar - stacks on mobile (top), side by side on desktop */}
+            <div className="lg:col-span-4 order-1 lg:order-2">
+              {/* Player List and Chat in 2 columns on small screens, but still within the sidebar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 mb-4 lg:mb-0">
+                {/* Player List */}
+                <div className="sm:col-span-2">
+                  <PlayerList
+                    handleJoinGame={handleJoinGame}
+                    handleBeginGame={handleBeginGame}
+                    handleContinueRound={handleContinueRound}
+                    game={game}
+                  />
+                </div>
 
-              {/* Chat */}
-              <div className="sm:col-span-1">
-                <div>Chatroom</div>
-                <div>{game.Status}</div>
-                <div>{game.RoundStatus}</div>
+                {/* Chat */}
+                <div className="sm:col-span-1">
+                  <div>Chatroom</div>
+                  <div>{game.Status}</div>
+                  <div>{game.RoundStatus}</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Main game area - takes full width on mobile, 8/12 on desktop */}
-          <div className="lg:col-span-8 order-2 lg:order-1">
-            {/* Board - make it larger and responsive */}
-            <div className="flex flex-col gap-4">
-              {renderGameBoard(game, handlePickWinningCard)}
-
-              {/* Player's hand */}
-              <PlayerHand game={game} handlePlayCard={handlePlayCard} />
+            {/* Main game area - takes full width on mobile, 8/12 on desktop */}
+            <div className="lg:col-span-8 order-2 lg:order-1">
+              {/* Board - make it larger and responsive */}
+              <div className="flex flex-col gap-4">
+                {renderGameBoard(game, handlePickWinningCard)}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="w-full absolute bottom-0 top-0 flex justify-center">
+        {/* Player's hand */}
+        <PlayerHand game={game} handlePlayCard={handlePlayCard} />
+      </div>
+    </>
   );
 }
 
@@ -174,20 +178,15 @@ function renderGameBoard(
 function JoinGameGrid(props: { game: Game }) {
   const players = props.game.Players;
 
-  let joinableSlots = props.game.MaxPlayerCount - props.game.Players.length;
-  let emptySlots = new Array(joinableSlots).fill(null);
+  const joinableSlots = props.game.MaxPlayerCount - props.game.Players.length;
+  const emptySlots = new Array(joinableSlots).fill(null);
 
-  let playerGrid = [...players, ...emptySlots];
+  const playerGrid = [...players, ...emptySlots];
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {playerGrid.map((player, index) => (
-        <Card
-          key={index}
-          className={`${
-            !player && "border-dashed"
-          }`}
-        >
+        <Card key={index} className={`${!player && "border-dashed"}`}>
           <CardContent className="p-4">
             {player ? (
               <div className="flex flex-col items-center text-center gap-2">

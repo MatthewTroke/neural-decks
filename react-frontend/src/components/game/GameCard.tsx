@@ -14,6 +14,11 @@ interface CardProps {
    * Is the card active/selected, changes the background color to primary
    */
   selected?: boolean;
+
+  /**
+   * Force the aspect ratio of the card
+   */
+  scalable?: boolean;
 }
 
 export default function GameCard(props: CardProps) {
@@ -25,6 +30,7 @@ export default function GameCard(props: CardProps) {
     isWinningCard,
     onCardClick,
     selected,
+    scalable = true,
   } = props;
 
   return (
@@ -32,14 +38,17 @@ export default function GameCard(props: CardProps) {
       onClick={() => (isDisabled ? () => {} : onCardClick(cardId))}
       key={cardId}
       className={cn(
-        "aspect-[3/4] w-36 h-48 flex items-start p-3 transition-all relative",
+        "w-full text-start md:aspect-[3/4] md:w-36 md:h-48 flex md:items-start p-3 transition-all relative",
         !isDisabled && "cursor-pointer hover:ring-2 hover:ring-primary",
         isDisabled && "cursor-not-allowed opacity-70",
         isBlack
           ? "bg-black text-white"
           : "bg-white text-black border-2 border-black",
         isWinningCard ? "bg-primary text-white" : "",
-        { "bg-primary": selected }
+        {
+          "bg-primary": selected,
+          "aspect-[3/4] w-36 h-48": !scalable,
+        }
       )}
       aria-disabled={isDisabled ? true : false}
       aria-selected={selected}
@@ -49,7 +58,11 @@ export default function GameCard(props: CardProps) {
           <Crown />
         </span>
       )}
-      <div className="w-full">
+      <div
+        className={cn("w-full", {
+          "pr-16 md:pr-0": scalable,
+        })}
+      >
         <p
           className={cn(
             "text-sm font-bold leading-tight tracking-tight",
@@ -63,8 +76,9 @@ export default function GameCard(props: CardProps) {
       {/* Small logo at bottom right */}
       <div
         className={cn(
-          "absolute bottom-2 right-2 text-[10px] font-semibold",
-          isBlack ? "text-white" : "text-black"
+          "absolute right-2 md:bottom-2 text-[10px] font-semibold",
+          isBlack ? "text-white" : "text-black",
+          { "bottom-2": !scalable }
         )}
       >
         Neural Decks

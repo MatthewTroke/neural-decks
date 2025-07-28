@@ -17,14 +17,14 @@ export default function Players(props: {
 
   // Reset animation when a new winner is chosen
   useEffect(() => {
-    const hasRoundWinner = props.game.RoundWinner;
+    let hasRoundWinner = props.game.round_winner;
 
     if (!hasRoundWinner) {
       return;
     }
 
-    const winner = props.game.Players.find(
-      (p) => p.UserID === props.game.RoundWinner.UserID
+    const winner = props.game.players.find(
+      (p) => p.user_id === props.game.round_winner.user_id
     );
 
     if (winner) {
@@ -32,26 +32,26 @@ export default function Players(props: {
       const timer = setTimeout(() => setShowAnimation(false), 2000);
       return () => clearTimeout(timer);
     }
-  }, [props.game.Players]);
+  }, [props.game.players]);
 
   return (
     <div>
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-1">
-          {/* <h3 className="font-semibold">Game #{props.game.ID}</h3> */}
+          {/* <h3 className="font-semibold">Game #{props.game.id}</h3> */}
           <Badge
           // variant={
-          //   game.Status === "In Progress" ? "default" : "secondary"
+          //   game.status === "In Progress" ? "default" : "secondary"
           // }
           >
-            {props.game.Status}
+            {props.game.status}
           </Badge>
           <Badge
           // variant={
-          //   game.Status === "In Progress" ? "default" : "secondary"
+          //   game.status === "In Progress" ? "default" : "secondary"
           // }
           >
-            {props.game.RoundStatus}
+            {props.game.round_status}
           </Badge>
         </div>
 
@@ -77,20 +77,20 @@ export default function Players(props: {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {props.game.Players.map((player) => (
+            {props.game.players.map((player) => (
               <div
-                key={player.UserID}
+                key={player.user_id}
                 className="flex justify-between items-center"
               >
                 <div className="flex items-center gap-2">
                   <Avatar>
-                    <AvatarImage alt={player.Name} />
-                    <AvatarFallback>{player.Name.at(0)}</AvatarFallback>
+                    <AvatarImage alt={player.name} />
+                    <AvatarFallback>{player.name.at(0)}</AvatarFallback>
                   </Avatar>
-                  <span>{player.Name}</span>
+                  <span>{player.name}</span>
                   <PlayerBadge player={player} game={props.game} />
                 </div>
-                <span>{player.Score} pts</span>
+                <span>{player.score} pts</span>
               </div>
             ))}
           </div>
@@ -106,8 +106,9 @@ interface ContinueRoundButtonProps {
 }
 
 function ContinueRoundButton(props: ContinueRoundButtonProps) {
-  const isGameInProgress = props.game.Status === "InProgress";
-  const isGameRoundOver = props.game.RoundStatus === "CardCzarChoseWinningCard";
+  const isGameInProgress = props.game.status === "InProgress";
+  const isGameRoundOver =
+    props.game.round_status === "CardCzarChoseWinningCard";
 
   const shouldRenderContinueRoundButton = isGameInProgress && isGameRoundOver;
 
@@ -130,8 +131,8 @@ interface JoinGameButtonProps {
 function JoinGameButton(props: JoinGameButtonProps) {
   const { user } = useAuth();
 
-  const isUserInGame = props.game.Players.some(
-    (player: Player) => player.UserID === user?.user_id
+  const isUserInGame = props.game.players.some(
+    (player: Player) => player.user_id === user?.user_id
   );
   const shouldRenderJoinGameButton = !isUserInGame;
 
@@ -156,8 +157,8 @@ interface BeginGameButtonProps {
 }
 
 function BeginGameButton(props: BeginGameButtonProps) {
-  const isGameReadyToBegin = props.game.Players.length > 1;
-  const isGameInSetupState = props.game.Status === "Setup";
+  const isGameReadyToBegin = props.game.players.length > 1;
+  const isGameInSetupState = props.game.status === "Setup";
 
   const shouldRenderBeginGameButton = isGameReadyToBegin && isGameInSetupState;
 

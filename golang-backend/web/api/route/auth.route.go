@@ -8,10 +8,11 @@ import (
 	"cardgame/services"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
-func NewAuthRouter(env *bootstrap.Env, db *gorm.DB, group fiber.Router) {
+func NewAuthRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group fiber.Router) {
 	sc := &controller.AuthController{
 		Env:            env,
 		Config:         config.NewGoogleOAuthConfig(env),

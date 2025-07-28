@@ -2,6 +2,8 @@ package handler
 
 import (
 	"cardgame/domain"
+	"cardgame/request"
+	"cardgame/services"
 	"encoding/json"
 	"fmt"
 )
@@ -12,23 +14,25 @@ type JoinGamePayload struct {
 }
 
 type JoinGameHandler struct {
-	Payload JoinGamePayload
-	GameSvc domain.GameService
-	Claim   *domain.CustomClaim
-	Hub     *domain.Hub
+	Payload          request.GameEventPayloadJoinedGameRequest
+	EventService     *services.EventService
+	GameStateService *services.GameStateService
+	Claim            *domain.CustomClaim
+	Hub              *domain.Hub
 }
 
-func NewJoinGameHandler(payload JoinGamePayload, gameSvc domain.GameService, claim *domain.CustomClaim, hub *domain.Hub) *JoinGameHandler {
+func NewJoinGameHandler(payload request.GameEventPayloadJoinedGameRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *JoinGameHandler {
 	return &JoinGameHandler{
-		Payload: payload,
-		GameSvc: gameSvc,
-		Claim:   claim,
-		Hub:     hub,
+		Payload:          payload,
+		EventService:     eventService,
+		GameStateService: gameStateService,
+		Claim:            claim,
+		Hub:              hub,
 	}
 }
 
 func (h *JoinGameHandler) Validate() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
@@ -48,24 +52,33 @@ func (h *JoinGameHandler) Validate() error {
 }
 
 func (h *JoinGameHandler) Handle() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	currentGame, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
 	}
 
-	game.Lock()
-	defer game.Unlock()
+	event, err := h.EventService.CreateGameEvent(
+		h.Payload.GameID,
+		domain.EventJoinedGame,
+		domain.NewGameEventPayloadJoinedGame(h.Payload.GameID, h.Payload.UserID, h.Claim),
+	)
 
-	player := domain.NewPlayer(h.Claim)
-
-	if game.Players == nil {
-		return fmt.Errorf("could not join game ID %s, game players is nil", h.Payload.GameID)
+	if err != nil {
+		return fmt.Errorf("failed to create event: %w", err)
 	}
 
-	game.Players = append(game.Players, player)
+	newGame := currentGame.Clone()
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	if err := newGame.ApplyEvent(event); err != nil {
+		return fmt.Errorf("failed to apply event: %w", err)
+	}
+
+	if err := h.EventService.AppendEvent(event); err != nil {
+		return fmt.Errorf("failed to persist event: %w", err)
+	}
+
+	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
 
 	jsonMessage, err := json.Marshal(message)
 

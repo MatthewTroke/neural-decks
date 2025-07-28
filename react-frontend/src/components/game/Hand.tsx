@@ -14,24 +14,24 @@ export default function Hand(props: {
   );
   const { user } = useAuth();
 
-  const player = props.game.Players.find((p) => p.UserID === user?.user_id);
+  const player = props.game.players.find((p) => p.user_id === user?.user_id);
   const playerIsCardCzar =
-    props.game.Players.find((p) => p.IsCardCzar)?.UserID === player?.UserID;
+    props.game.players.find((p) => p.is_card_czar)?.user_id === player?.user_id;
 
   if (!player) {
     return <div>no cards!</div>;
   }
 
-  if (props.game.Status === "Setup") {
+  if (props.game.status === "Setup") {
     return <div>Waiting for game to start...</div>;
   }
 
-  const disabled = Boolean(player.PlacedCard) || playerIsCardCzar;
+  const disabled = Boolean(player.placed_card) || playerIsCardCzar;
 
   const onSelectCard = (cardId: string) => {
-    const card = player.Deck.find((card: Card) => card.ID === cardId);
+    const card = player.deck.find((card: Card) => card.id === cardId);
 
-    setSelectedCardId((id) => (id === card?.ID ? undefined : card?.ID));
+    setSelectedCardId((id) => (id === card?.id ? undefined : card?.id));
 
     // if (card) {
     //   props.handlePlayCard(card);
@@ -39,7 +39,7 @@ export default function Hand(props: {
   };
 
   const onChooseChard = () => {
-    const card = player.Deck.find((card: Card) => card.ID === selectedCardId);
+    const card = player.deck.find((card: Card) => card.id === selectedCardId);
 
     console.log({ card });
 
@@ -63,24 +63,23 @@ export default function Hand(props: {
       <h3 className="text-center sm:text-left text-lg font-semibold mb-3">
         Your Hand
       </h3>
-
-      <div className="relative lg:hidden flex flex-wrap gap-4 justify-center m-4">
-        {player.Deck?.map((card) => (
+      <div className="relative lg:hidden flex flex-wrap gap-4 justify-center sm:justify-start">
+        {player.deck?.map((card: Card) => (
           <>
             <GameCard
-              key={card.ID}
+              key={card.id}
               onCardClick={onSelectCard}
-              cardId={card.ID}
-              value={card.CardValue}
+              cardId={card.id}
+              value={card.card_value}
               isDisabled={disabled}
-              selected={selectedCardId === card.ID}
+              selected={selectedCardId === card.id}
             />
           </>
         ))}
       </div>
 
       <div className="hidden lg:block">
-        {player.Deck?.map((card, index) => (
+        {player.deck?.map((card: Card, index: number) => (
           <div
             className={cn(
               "absolute",
@@ -92,12 +91,12 @@ export default function Hand(props: {
             )}
           >
             <GameCard
-              key={card.ID}
+              key={card.id}
               onCardClick={onSelectCard}
-              cardId={card.ID}
-              value={card.CardValue}
+              cardId={card.id}
+              value={card.card_value}
               isDisabled={disabled}
-              selected={selectedCardId === card.ID}
+              selected={selectedCardId === card.id}
             />
           </div>
         ))}

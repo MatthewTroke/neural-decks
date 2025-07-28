@@ -183,10 +183,10 @@ function Games(props: { games: Game[] }) {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {props.games.map((game: Game) => (
-          <Card key={game.ID} className="p-6" variant="ghost">
+          <Card key={game.id} className="p-6" variant="ghost">
             <div className="flex justify-between items-center">
               <div className="flex gap-2">
-                <h3 className="font-semibold">Game: {game.Name}</h3>
+                <h3 className="font-semibold">Game: {game.name}</h3>
               </div>
 
               <Button
@@ -204,11 +204,11 @@ function Games(props: { games: Game[] }) {
               <div className="flex flex-row-reverse gap-4 text-sm">
                 <Badge
                   className={cn({
-                    "animate-pulse": game.Status === "InProgress",
+                    "animate-pulse": game.status === "InProgress",
                   })}
                 >
                   <LoaderIcon className="animate-spin" />
-                  {game.Status === "InProgress" ? "In Progress" : "Waiting"}
+                  {game.status === "InProgress" ? "In Progress" : "Waiting"}
                 </Badge>
                 <div className="flex items-center">
                   <Timer className="h-4 w-4 mr-1" />
@@ -216,7 +216,7 @@ function Games(props: { games: Game[] }) {
                 </div>
                 <div className="flex items-center">
                   <Trophy className="h-4 w-4 mr-1" />
-                  Round {game.CurrentGameRound}
+                  Round {game.current_game_round}
                 </div>
               </div>
 
@@ -230,17 +230,17 @@ function Games(props: { games: Game[] }) {
                 </div>
                 <ScrollArea className="min-h-24">
                   <div className="space-y-2">
-                    {game.Players.map((player) => (
+                    {game.players.map((player) => (
                       <div
-                        key={player.Name}
+                        key={player.name}
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={player.Image} />
-                            <AvatarFallback>{player.Name[0]}</AvatarFallback>
+                            <AvatarImage src={player.image} />
+                            <AvatarFallback>{player.name[0]}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{player.Name}</span>
+                          <span className="text-sm">{player.name}</span>
                         </div>
                         <span className="text-sm font-medium">0 pts</span>
                       </div>

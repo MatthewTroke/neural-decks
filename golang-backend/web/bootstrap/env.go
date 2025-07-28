@@ -16,6 +16,10 @@ type Env struct {
 	TemporalNamespace       string `mapstructure:"TEMPORAL_NAMESPACE"`
 	ChatGPTAPIKey           string `mapstructure:"CHATGPT_API_KEY"`
 	JWTVerifySecret         string `mapstructure:"JWT_VERIFY_SECRET"`
+	RedisHost               string `mapstructure:"REDIS_HOST"`
+	RedisPort               string `mapstructure:"REDIS_PORT"`
+	RedisPassword           string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB                 int    `mapstructure:"REDIS_DB"`
 }
 
 func NewEnv() *Env {

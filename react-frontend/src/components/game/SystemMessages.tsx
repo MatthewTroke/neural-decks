@@ -1,11 +1,10 @@
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { Badge } from "@/components/ui/badge";
 
-
-export default function GameBoardChat(props: { chatMessages: any[] }) {
+export default function SystemMessages(props: { chatMessages: any[] }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   console.log(props.chatMessages);
@@ -13,7 +12,9 @@ export default function GameBoardChat(props: { chatMessages: any[] }) {
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollElement = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       if (scrollElement) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
@@ -28,7 +29,10 @@ export default function GameBoardChat(props: { chatMessages: any[] }) {
         </h2>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <ScrollArea ref={scrollAreaRef} className="h-full max-h-64 min-h-64 p-4">
+        <ScrollArea
+          ref={scrollAreaRef}
+          className="h-full max-h-64 min-h-64 p-4"
+        >
           <div className="space-y-4 flex flex-col">
             {props.chatMessages.map((chat, i) => (
               <div key={i} className="space-y-1 gap-3 flex">
@@ -40,5 +44,5 @@ export default function GameBoardChat(props: { chatMessages: any[] }) {
         </ScrollArea>
       </CardContent>
     </Card>
-  )
+  );
 }

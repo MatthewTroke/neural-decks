@@ -7,7 +7,9 @@ export default function Board(props: {
 }) {
   const { user } = useAuth();
 
-  let player = props.game.players.find((p: any) => p.user_id === user?.user_id);
+  const player = props.game.players.find(
+    (p: any) => p.user_id === user?.user_id
+  );
   // let isCardCzar = player?.is_card_czar;
   // let isWhiteCardDisabled =
   //   !isCardCzar ||
@@ -16,7 +18,7 @@ export default function Board(props: {
   //     props.game.round_status === "CardCzarPickingWinningCard"
   //   );
 
-  let hasRoundWinner =
+  const hasRoundWinner =
     props.game.round_winner &&
     props.game.status === "InProgress" &&
     props.game.round_status === "CardCzarChoseWinningCard";
@@ -48,28 +50,18 @@ export default function Board(props: {
   };
 
   return (
-    <div>
-      {/* <Card key={props.game.ID} className="p-6"> */}
-      <div className="flex justify-between items-start">
-        <div className="space-y-1">
-          <div className="flex items-start">
-            <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-              <RenderBlackCard card={props.game.black_card} />
-              {props.game.white_cards.map((card) => (
-                <GameCard
-                  key={card.id}
-                  cardId={card.id}
-                  value={card.card_value}
-                  onCardClick={() => onWhiteCardClick(card)}
-                  isDisabled={false}
-                  isWinningCard={winningCard?.id === card.id ? true : false}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* </Card> */}
+    <div className="flex flex-col md:flex-row items-start gap-2">
+      <RenderBlackCard card={props.game.black_card} />
+      {props.game.white_cards.map((card) => (
+        <GameCard
+          key={card.id}
+          cardId={card.id}
+          value={card.card_value}
+          onCardClick={() => onWhiteCardClick(card)}
+          isDisabled={false}
+          isWinningCard={winningCard?.id === card.id ? true : false}
+        />
+      ))}
     </div>
   );
 }

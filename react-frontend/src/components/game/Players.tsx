@@ -1,5 +1,4 @@
 import PlayerBadge from "@/components/game/players/Badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Users } from "lucide-react";
@@ -17,7 +16,7 @@ export default function Players(props: {
 
   // Reset animation when a new winner is chosen
   useEffect(() => {
-    let hasRoundWinner = props.game.round_winner;
+    const hasRoundWinner = props.game.round_winner;
 
     if (!hasRoundWinner) {
       return;
@@ -35,8 +34,8 @@ export default function Players(props: {
   }, [props.game.players]);
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-4">
+    <div className="flex flex-col gap-4 w-full">
+      <div className="flex justify-between items-start">
         <JoinGameButton
           game={props.game}
           handleJoinGame={props.handleJoinGame}
@@ -51,7 +50,7 @@ export default function Players(props: {
         />
       </div>
 
-      <Card variant="ghost">
+      <Card variant="ghost" className="w-full">
         <CardHeader>
           <h2 className="text-lg font-medium flex items-center gap-2">
             <Users className="h-5 w-5" /> Players

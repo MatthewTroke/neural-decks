@@ -59,10 +59,36 @@ export default function Hand(props: {
   ];
 
   return (
-    <div className="absolute bottom-0 flex flex-col justify-center items-center">
-      <h3 className="text-center sm:text-left text-lg font-semibold mb-3">
-        Your Hand
-      </h3>
+    <div className="flex flex-col justify-center items-center">
+      <div className="flex flex-col items-center justify-center lg:absolute bottom-0">
+        <h3 className="text-center sm:text-left text-lg font-semibold mb-3">
+          Your Hand
+        </h3>
+
+        <div className="flex gap-2 mb-8">
+          {playerIsCardCzar ? (
+            <span className="text-center">
+              You are the Card Czar! Choose a winning card.
+            </span>
+          ) : (
+            <>
+              <Button disabled={!selectedCardId} onClick={onChooseChard}>
+                <Check />
+                Choose
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!selectedCardId}
+                onClick={() => setSelectedCardId(undefined)}
+              >
+                <X />
+                Cancel
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
       <div className="relative lg:hidden flex flex-wrap gap-4 justify-center sm:justify-start">
         {player.deck?.map((card: Card) => (
           <>
@@ -78,12 +104,12 @@ export default function Hand(props: {
         ))}
       </div>
 
-      <div className="hidden lg:block">
+      <div className="relative hidden lg:block">
         {player.deck?.map((card: Card, index: number) => (
           <div
             className={cn(
               "absolute",
-              "bottom-[16rem]",
+              "bottom-0",
               "-ml-8",
               "origin-[40px_500px]",
               "hover:z-10",
@@ -100,29 +126,6 @@ export default function Hand(props: {
             />
           </div>
         ))}
-      </div>
-
-      <div className="flex gap-2 mb-8">
-        {playerIsCardCzar ? (
-          <span className="text-center">
-            You are the Card Czar! Choose a winning card.
-          </span>
-        ) : (
-          <>
-            <Button disabled={!selectedCardId} onClick={onChooseChard}>
-              <Check />
-              Choose
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!selectedCardId}
-              onClick={() => setSelectedCardId(undefined)}
-            >
-              <X />
-              Cancel
-            </Button>
-          </>
-        )}
       </div>
     </div>
   );

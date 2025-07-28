@@ -10,8 +10,8 @@ import useWebSocket from "react-use-websocket";
 import { SiteHeader } from "../site-header";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Card, CardContent } from "../ui/card";
-import GameBoardChat from "./Chat";
 import { Spinner } from "../ui/spinner";
+import SystemMessages from "./SystemMessages";
 
 export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -24,7 +24,6 @@ export default function GameComponent() {
     type: string;
     payload: any;
   }) => {
-    debugger;
     switch (message.type) {
       case "GAME_UPDATE":
         setGame(message.payload);
@@ -112,12 +111,12 @@ export default function GameComponent() {
     );
   };
 
-  if (readyState !== 1 || !game)  {
+  if (readyState !== 1 || !game) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-        <h2 className="text-2xl font-bold mb-4">Connecting to game...</h2>
-        <Spinner />
+          <h2 className="text-2xl font-bold mb-4">Connecting to game...</h2>
+          <Spinner />
         </div>
       </div>
     );
@@ -127,30 +126,19 @@ export default function GameComponent() {
     <>
       <SiteHeader title={`Game: ${game.name}`} />
       <div className="flex flex-col">
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Sidebar - stacks on mobile (top), side by side on desktop */}
-            <div className="lg:col-span-4 order-1 lg:order-2">
-              {/* Player List and Chat in 2 columns on small screens, but still within the sidebar */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 mb-4 lg:mb-0">
-                {/* Player List */}
-                <div className="sm:col-span-2">
-                  <PlayerList
-                    handleJoinGame={handleJoinGame}
-                    handleBeginGame={handleBeginGame}
-                    handleContinueRound={handleContinueRound}
-                    game={game}
-                  />
-                </div>
-
-                {/* Chat */}
-                <GameBoardChat chatMessages={chatMessages} />
-         
-              </div>
+        <div className="container mx-auto p-6">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-3 order-1 lg:order-2 lg:col-span-1">
+              <PlayerList
+                handleJoinGame={handleJoinGame}
+                handleBeginGame={handleBeginGame}
+                handleContinueRound={handleContinueRound}
+                game={game}
+              />
             </div>
 
             {/* Main game area - takes full width on mobile, 8/12 on desktop */}
-            <div className="lg:col-span-8 order-2 lg:order-1">
+            <div className="col-span-3 lg:col-span-2 order-2 lg:order-1">
               {/* Board - make it larger and responsive */}
               <div className="flex flex-col gap-4">
                 {renderGameBoard(game, handlePickWinningCard)}
@@ -160,9 +148,14 @@ export default function GameComponent() {
         </div>
       </div>
 
-      <div className="w-full absolute bottom-0 flex justify-center">
+      <div className="relative flex justify-center md:min-h-[36rem] container mx-auto p-6">
         {/* Player's hand */}
         <PlayerHand game={game} handlePlayCard={handlePlayCard} />
+      </div>
+
+      {/* Chat */}
+      <div className="mx-auto container p-6">
+        <SystemMessages chatMessages={chatMessages} />
       </div>
     </>
   );
@@ -182,8 +175,8 @@ function renderGameBoard(
 function JoinGameGrid(props: { game: Game }) {
   const players = props.game.players;
 
-  let joinableSlots = props.game.max_player_count - props.game.players.length;
-  let emptySlots = new Array(joinableSlots).fill(null);
+  const joinableSlots = props.game.max_player_count - props.game.players.length;
+  const emptySlots = new Array(joinableSlots).fill(null);
 
   const playerGrid = [...players, ...emptySlots];
 
@@ -217,5 +210,3 @@ function JoinGameGrid(props: { game: Game }) {
     </div>
   );
 }
-
-

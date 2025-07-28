@@ -93,7 +93,6 @@ function RenderBlackCard(props: RenderBlackCardProps) {
       onCardClick={() => {}}
       isDisabled
       isBlack
-      scalable={false}
     />
   );
 }

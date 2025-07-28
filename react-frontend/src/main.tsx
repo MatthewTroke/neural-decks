@@ -1,18 +1,18 @@
-import { createRoot } from "react-dom/client";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Link,
-  Navigate,
-} from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
+import Game from "@/components/game/Game";
+import GameList from "@/components/gamelist/GameList.tsx";
 import Login from "@/components/login/Login.tsx";
 import ProtectedRoute from "@/components/shared/ProtectedRoute.tsx";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createRoot } from "react-dom/client";
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
+import { Navigation } from "./components/shared/Navigation";
 import "./index.css";
-import GameList from "@/components/gamelist/GameList.tsx";
-import Game from "@/components/game/Game";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,9 @@ createRoot(document.getElementById("root")!).render(
             path="/games"
             element={
               <ProtectedRoute>
-                <GameList />
+                <Navigation>
+                  <GameList />
+                </Navigation>
               </ProtectedRoute>
             }
           />
@@ -40,7 +42,9 @@ createRoot(document.getElementById("root")!).render(
             path="/games/:gameId"
             element={
               <ProtectedRoute>
-                <Game />
+                <Navigation>
+                  <Game />
+                </Navigation>
               </ProtectedRoute>
             }
           />

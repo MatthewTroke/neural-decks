@@ -1,13 +1,11 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/context/AuthContext";
-import { Card } from "../ui/card";
-import { Timer, Trophy, Users } from "lucide-react";
-import { useEffect, useState } from "react";
 import PlayerBadge from "@/components/game/players/Badge";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Card, CardContent, CardHeader } from "../ui/card";
 
 export default function Players(props: {
   game: Game;
@@ -40,7 +38,7 @@ export default function Players(props: {
     <div>
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-1">
-          <h3 className="font-semibold">Game #{props.game.id}</h3>
+          {/* <h3 className="font-semibold">Game #{props.game.id}</h3> */}
           <Badge
           // variant={
           //   game.status === "In Progress" ? "default" : "secondary"
@@ -71,28 +69,33 @@ export default function Players(props: {
         />
       </div>
 
-      <div className="bg-[#121a2f] rounded-xl p-4 border border-gray-800">
-        <h2 className="text-lg font-medium mb-3 flex items-center gap-2">
-          <Users className="h-5 w-5" /> Players
-        </h2>
-        <div className="space-y-2">
-          {props.game.players.map((player: Player) => (
-            <div
-              key={player.user_id}
-              className="flex justify-between items-center"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs">
-                  {player.name.at(0)}
+      <Card variant="ghost">
+        <CardHeader>
+          <h2 className="text-lg font-medium flex items-center gap-2">
+            <Users className="h-5 w-5" /> Players
+          </h2>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {props.game.players.map((player) => (
+              <div
+                key={player.user_id}
+                className="flex justify-between items-center"
+              >
+                <div className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage alt={player.name} />
+                    <AvatarFallback>{player.name.at(0)}</AvatarFallback>
+                  </Avatar>
+                  <span>{player.name}</span>
+                  <PlayerBadge player={player} game={props.game} />
                 </div>
-                <span>{player.name}</span>
-                <PlayerBadge player={player} game={props.game} />
+                <span>{player.score} pts</span>
               </div>
-              <span>{player.score} pts</span>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -104,7 +107,8 @@ interface ContinueRoundButtonProps {
 
 function ContinueRoundButton(props: ContinueRoundButtonProps) {
   const isGameInProgress = props.game.status === "InProgress";
-  const isGameRoundOver = props.game.round_status === "CardCzarChoseWinningCard";
+  const isGameRoundOver =
+    props.game.round_status === "CardCzarChoseWinningCard";
 
   const shouldRenderContinueRoundButton = isGameInProgress && isGameRoundOver;
 
@@ -125,7 +129,7 @@ interface JoinGameButtonProps {
 }
 
 function JoinGameButton(props: JoinGameButtonProps) {
-  let { user } = useAuth();
+  const { user } = useAuth();
 
   const isUserInGame = props.game.players.some(
     (player: Player) => player.user_id === user?.user_id

@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { HelpCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,13 +21,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import axios from "axios";
-import { useMutation } from "@tanstack/react-query";
-import { Spinner } from "@/components/ui/spinner";
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -51,7 +50,7 @@ const formSchema = z.object({
 export function CreateGameDialog() {
   const [open, setOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,7 +80,7 @@ export function CreateGameDialog() {
     onSuccess: () => {
       setOpen(false);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ['games'] }); // Invalidate the games query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["games"] }); // Invalidate the games query to refresh the list
     },
     onError: (error) => {
       console.error(error);
@@ -100,10 +99,7 @@ export function CreateGameDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="bg-slate-700 hover:bg-slate-600 text-white"
-        >
+        <Button>
           <Plus className="mr-2 h-4 w-4" />
           Create New Game
         </Button>

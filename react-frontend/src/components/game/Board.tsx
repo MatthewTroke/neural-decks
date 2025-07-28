@@ -1,12 +1,11 @@
 import { useAuth } from "@/context/AuthContext";
 import GameCard from "./GameCard";
-import { Card } from "../ui/card";
 
 export default function Board(props: {
   game: Game;
   handlePickWinningCard: (cardId: string) => void;
 }) {
-  let { user } = useAuth();
+  const { user } = useAuth();
 
   let player = props.game.players.find((p: any) => p.user_id === user?.user_id);
   // let isCardCzar = player?.is_card_czar;
@@ -50,29 +49,27 @@ export default function Board(props: {
 
   return (
     <div>
-
-
-      <Card key={props.game.id} className="p-6">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <div className="flex items-start">
-              <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-                <RenderBlackCard card={props.game.black_card} />
-                {props.game.white_cards.map((card: Card) => (
-                  <GameCard
-                    key={card.id}
-                    cardId={card.id}
-                    value={card.card_value}
-                    onCardClick={() => onWhiteCardClick(card)}
-                    isDisabled={false}
-                    isWinningCard={winningCard?.id === card.id ? true : false}
-                  />
-                ))}
-              </div>
+      {/* <Card key={props.game.ID} className="p-6"> */}
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <div className="flex items-start">
+            <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+              <RenderBlackCard card={props.game.black_card} />
+              {props.game.white_cards.map((card) => (
+                <GameCard
+                  key={card.id}
+                  cardId={card.id}
+                  value={card.card_value}
+                  onCardClick={() => onWhiteCardClick(card)}
+                  isDisabled={false}
+                  isWinningCard={winningCard?.id === card.id ? true : false}
+                />
+              ))}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
+      {/* </Card> */}
     </div>
   );
 }
@@ -96,6 +93,7 @@ function RenderBlackCard(props: RenderBlackCardProps) {
       onCardClick={() => {}}
       isDisabled
       isBlack
+      scalable={false}
     />
   );
 }

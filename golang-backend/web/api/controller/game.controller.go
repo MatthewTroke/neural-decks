@@ -18,25 +18,38 @@ import (
 )
 
 type GameController struct {
-	Env         *bootstrap.Env
-	GameService domain.GameService
-	RoomManager *domain.RoomManager
-	// Potentially interface with this incase you wanna swap to another gpt interface.
-	ChatGPTService *services.ChatGPTService
+	Env              *bootstrap.Env
+	GameService      domain.GameService
+	EventService     *services.EventService
+	GameStateService *services.GameStateService
+	RoomManager      *domain.RoomManager
+	ChatGPTService   *services.ChatGPTService
+}
+
+// NewGameController creates a new GameController with initialized cache
+func NewGameController(env *bootstrap.Env, gameService domain.GameService, eventService *services.EventService, gameStateService *services.GameStateService, roomManager *domain.RoomManager, chatGPTService *services.ChatGPTService) *GameController {
+	return &GameController{
+		Env:              env,
+		GameService:      gameService,
+		EventService:     eventService,
+		GameStateService: gameStateService,
+		RoomManager:      roomManager,
+		ChatGPTService:   chatGPTService,
+	}
 }
 
 func (gc *GameController) HandleGameRoomWebsocketInboundMessage(msg []byte, hub *domain.Hub, claim *domain.CustomClaim) error {
-	var message domain.WebSocketMessage[domain.InboundWebsocketGameType, json.RawMessage]
+	var message request.GameEventRequest
 
 	if err := json.Unmarshal(msg, &message); err != nil {
-		return errors.New("unable to unmarshal WebSocket message")
+		return errors.New("unable to unmarshal WebSocket message into a GameEventRequest")
 	}
 
 	var wsHandler handler.WebSocketHandler
 
 	switch message.Type {
-	case domain.BeginGame:
-		var payload handler.BeginGamePayload
+	case domain.EventGameBegins:
+		var payload request.GameEventPayloadGameBeginsRequest
 
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return errors.New("unable to unmarshal BeginGame payload")
@@ -44,12 +57,13 @@ func (gc *GameController) HandleGameRoomWebsocketInboundMessage(msg []byte, hub 
 
 		wsHandler = handler.NewBeginGameHandler(
 			payload,
-			gc.GameService,
+			gc.EventService,
+			gc.GameStateService,
 			claim,
 			hub,
 		)
-	case domain.JoinGame:
-		var payload handler.JoinGamePayload
+	case domain.EventJoinedGame:
+		var payload request.GameEventPayloadJoinedGameRequest
 
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return errors.New("unable to unmarshal JoinGamePayload")
@@ -57,12 +71,13 @@ func (gc *GameController) HandleGameRoomWebsocketInboundMessage(msg []byte, hub 
 
 		wsHandler = handler.NewJoinGameHandler(
 			payload,
-			gc.GameService,
+			gc.EventService,
+			gc.GameStateService,
 			claim,
 			hub,
 		)
-	case domain.PlayCard:
-		var payload handler.PlayCardPayload
+	case domain.EventCardPlayed:
+		var payload request.GameEventPayloadPlayCardRequest
 
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return errors.New("unable to unmarshal PlayCardPayload")
@@ -70,30 +85,33 @@ func (gc *GameController) HandleGameRoomWebsocketInboundMessage(msg []byte, hub 
 
 		wsHandler = handler.NewPlayCardHandler(
 			payload,
-			gc.GameService,
+			gc.EventService,
+			gc.GameStateService,
 			claim,
 			hub,
 		)
-	case domain.PickWinningCard:
-		var payload handler.PickWinningCardPayload
+	case domain.EventCardCzarChoseWinningCard:
+		var payload request.GameEventPayloadCardCzarChoseWinningCardRequest
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return errors.New("unable to unmarshal PickWinningCardPayload")
 		}
 		wsHandler = handler.NewPickWinningCardHandler(
 			payload,
-			gc.GameService,
+			gc.EventService,
+			gc.GameStateService,
 			claim,
 			hub,
 		)
-	case domain.ContinueRound:
-		var payload handler.ContinueRoundPayload
+	case domain.EventRoundContinued:
+		var payload request.GameEventPayloadGameRoundContinuedRequest
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return errors.New("unable to unmarshal ContinueRoundPayload")
 		}
 
 		wsHandler = handler.NewContinueRoundHandler(
 			payload,
-			gc.GameService,
+			gc.EventService,
+			gc.GameStateService,
 			claim,
 			hub,
 		)
@@ -164,7 +182,7 @@ func (gc *GameController) CreateGame(c *fiber.Ctx) error {
 	return nil
 }
 
-func (gc *GameController) HandleGameRoomWebsocket(c *websocket.Conn) {
+func (gc *GameController) HandleJoinWebsocketGameRoom(c *websocket.Conn) {
 	roomId := c.Params("id")
 	claim := c.Locals("user").(*domain.CustomClaim)
 
@@ -172,7 +190,7 @@ func (gc *GameController) HandleGameRoomWebsocket(c *websocket.Conn) {
 
 	hub.RegisterClient(c)
 
-	game, _ := gc.GameService.GetGameById(roomId)
+	game, _ := gc.EventService.GetGameById(roomId)
 
 	websocketMessage := domain.NewWebSocketMessage(domain.GameUpdate, game)
 

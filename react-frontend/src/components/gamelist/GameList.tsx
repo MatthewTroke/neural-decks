@@ -182,21 +182,21 @@ function Games(props: { games: Game[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
       {props.games.map((game: Game) => (
-        <Card key={game.ID} className="p-6">
+        <Card key={game.id} className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="space-y-1">
-              <h3 className="font-semibold">Game #{game.ID}</h3>
+              <h3 className="font-semibold">Game #{game.id}</h3>
               <Badge
               // variant={
-              //   game.Status === "In Progress" ? "default" : "secondary"
+              //   game.status === "In Progress" ? "default" : "secondary"
               // }
               >
-                {game.Status}
+                {game.status}
               </Badge>
             </div>
 
             <Button
-              onClick={() => handleEnterGameRoom(game.ID)}
+              onClick={() => handleEnterGameRoom(game.id)}
               variant="outline"
               size="sm"
             >
@@ -211,10 +211,10 @@ function Games(props: { games: Game[] }) {
                 <Timer className="h-4 w-4 mr-1" />
                 0:00
               </div>
-              <div className="flex items-center">
-                <Trophy className="h-4 w-4 mr-1" />
-                Round {game.CurrentGameRound}
-              </div>
+                              <div className="flex items-center">
+                  <Trophy className="h-4 w-4 mr-1" />
+                  Round {game.current_game_round}
+                </div>
             </div>
 
             {/* Players */}
@@ -225,17 +225,17 @@ function Games(props: { games: Game[] }) {
               </div>
               <ScrollArea className="h-24">
                 <div className="space-y-2">
-                  {game.Players.map((player) => (
+                  {game.players.map((player: Player) => (
                     <div
-                      key={player.Name}
+                      key={player.name}
                       className="flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={player.Image} />
-                          <AvatarFallback>{player.Name[0]}</AvatarFallback>
+                          <AvatarImage src={player.image} />
+                          <AvatarFallback>{player.name[0]}</AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{player.Name}</span>
+                        <span className="text-sm">{player.name}</span>
                       </div>
                       <span className="text-sm font-medium">0 pts</span>
                     </div>

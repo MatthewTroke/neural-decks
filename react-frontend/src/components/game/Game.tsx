@@ -49,7 +49,7 @@ export default function GameComponent() {
   const handleJoinGame = () => {
     sendMessage(
       JSON.stringify({
-        type: "JOIN_GAME",
+        type: "JoinedGame",
         payload: {
           //TODO remove user_id and use the claim on the backend
           game_id: gameId,
@@ -62,7 +62,7 @@ export default function GameComponent() {
   const handleBeginGame = () => {
     sendMessage(
       JSON.stringify({
-        type: "BEGIN_GAME",
+        type: "GameBegins",
         payload: {
           //TODO remove user_id and use the claim on the backend
           game_id: gameId,
@@ -75,9 +75,9 @@ export default function GameComponent() {
   const handlePlayCard = (card: Card) => {
     sendMessage(
       JSON.stringify({
-        type: "PLAY_CARD",
+        type: "CardPlayed",
         payload: {
-          card_id: card.ID,
+          card_id: card.id,
           game_id: gameId,
         },
       })
@@ -87,7 +87,7 @@ export default function GameComponent() {
   const handlePickWinningCard = (cardId: string) => {
     sendMessage(
       JSON.stringify({
-        type: "PICK_WINNING_CARD",
+        type: "CardCzarChoseWinningCard",
         payload: {
           card_id: cardId,
           game_id: gameId,
@@ -99,7 +99,7 @@ export default function GameComponent() {
   const handleContinueRound = () => {
     sendMessage(
       JSON.stringify({
-        type: "CONTINUE_ROUND",
+        type: "RoundContinued",
         payload: {
           game_id: gameId,
         },
@@ -138,8 +138,8 @@ export default function GameComponent() {
               {/* Chat */}
               <div className="sm:col-span-1">
                 <div>Chatroom</div>
-                <div>{game.Status}</div>
-                <div>{game.RoundStatus}</div>
+                <div>{game.status}</div>
+                <div>{game.round_status}</div>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ function renderGameBoard(
   game: Game,
   handlePickWinningCard: (cardId: string) => void
 ) {
-  if (game.Status === "Setup") {
+  if (game.status === "Setup") {
     return <JoinGameGrid game={game} />;
   }
 
@@ -172,9 +172,9 @@ function renderGameBoard(
 }
 
 function JoinGameGrid(props: { game: Game }) {
-  const players = props.game.Players;
+  const players = props.game.players;
 
-  let joinableSlots = props.game.MaxPlayerCount - props.game.Players.length;
+  let joinableSlots = props.game.max_player_count - props.game.players.length;
   let emptySlots = new Array(joinableSlots).fill(null);
 
   let playerGrid = [...players, ...emptySlots];
@@ -192,11 +192,11 @@ function JoinGameGrid(props: { game: Game }) {
             {player ? (
               <div className="flex flex-col items-center text-center gap-2">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={player.Image} />
-                  <AvatarFallback>{player.Name.substring(0, 2)}</AvatarFallback>
+                  <AvatarImage src={player.image} />
+                  <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{player.Name}</div>
+                  <div className="font-medium">{player.name}</div>
                   <Crown className="h-3 w-3 mr-1" />
                 </div>
               </div>

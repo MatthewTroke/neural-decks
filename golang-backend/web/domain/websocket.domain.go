@@ -8,13 +8,13 @@ type WebSocketHandler interface {
 	Handle() error
 }
 
-type WebSocketMessage[M any, P any] struct {
+type WebSocketGameEvent[M any, P any] struct {
 	Type    M `json:"type"`
 	Payload P `json:"payload"`
 }
 
-func NewWebSocketMessage[M, P any](messageType M, payload P) WebSocketMessage[M, P] {
-	return WebSocketMessage[M, P]{
+func NewWebSocketMessage[M, P any](messageType M, payload P) WebSocketGameEvent[M, P] {
+	return WebSocketGameEvent[M, P]{
 		Type:    messageType,
 		Payload: payload,
 	}

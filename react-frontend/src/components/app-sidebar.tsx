@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="/">
                 <span className="text-base font-semibold">Neural Decks</span>
-                <Badge>BETA</Badge>
+                <Badge>Beta</Badge>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

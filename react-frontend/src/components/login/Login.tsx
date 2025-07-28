@@ -1,497 +1,98 @@
-import axios from "axios";
-import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import cbhImage from "@/assets/cbh-white.png";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { useMutation } from "@tanstack/react-query"
+import axios from "axios"
+import { Link } from "react-router-dom"
 
-import {
-  ChromeIcon as Google,
-  Menu,
-  Github,
-  Twitter,
-  Brain,
-  Users,
-  Shuffle,
-  X,
-} from "lucide-react";
-import { Link } from "react-router";
-import { useState } from "react";
-
-export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const response = await axios.get("http://localhost:8080/auth/google", {
-        withCredentials: true,
+export default function LoginPage() {
+    const googleAuthMutation = useMutation({
+        mutationFn: async () => {
+          const response = await axios.get("http://localhost:8080/auth/google", {
+            withCredentials: true,
+          });
+    
+          return response.data;
+        },
+        onSuccess: (data: any) => {
+          window.location.href = data.redirect_url;
+        },
+        onError: (error: any) => {
+          console.error("Error generating OAuth link:", error);
+        },
       });
 
-      return response.data;
-    },
-    onSuccess: (data: any) => {
-      window.location.href = data.redirect_url;
-    },
-    onError: (error: any) => {
-      console.error("Error generating OAuth link:", error);
-    },
-  });
+      const discordAuthMutation = useMutation({
+        mutationFn: async () => {
+          const response = await axios.get("http://localhost:8080/auth/discord", {
+            withCredentials: true,
+          });
+    
+          return response.data;
+        },
+        onSuccess: (data: any) => {
+          window.location.href = data.redirect_url;
+        },
+        onError: (error: any) => {
+          console.error("Error generating OAuth link:", error);
+        },
+      });
 
-  return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#0f1524] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-[#0f1524]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1524]/60">
-        <div
-          className="container mx-auto px-4 md:px-6"
-          style={{ maxWidth: "1280px" }}
-        >
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link to="/" className="flex items-center gap-2">
-                <span className="text-xl font-bold">Neural Decks</span>
-                <div className="inline-block rounded-lg bg-purple-900/20 px-3 py-1 text-sm text-purple-400">
-                  Beta
-                </div>
-              </Link>
-            </div>
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            {/* Login Card */}
+            <Card className="w-full max-w-md bg-card/50 border-border backdrop-blur-sm">
+                <CardHeader className="text-center space-y-2">
+                    <CardTitle className="text-2xl font-bold text-foreground flex justify-center">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-xl font-bold text-foreground">Neural Decks</h1>
+                            <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">Beta</span>
+                        </div></CardTitle>
+                    <CardDescription className="text-muted-foreground">Sign in to a provider to access the game.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Google Login Button */}
+                    <Button
+                        onClick={() => googleAuthMutation.mutate()}
+                        variant="outline"
+                        className="w-full bg-muted hover:bg-muted text-foreground border-border font-medium"
+                    >
+                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                            <path
+                                fill="#4285F4"
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            />
+                            <path
+                                fill="#34A853"
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            />
+                            <path
+                                fill="#FBBC05"
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                            />
+                            <path
+                                fill="#EA4335"
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                            />
+                        </svg>
+                        Login with Google
+                    </Button>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button
-                className="flex items-center justify-center"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label="Toggle menu"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
-            </div>
-
-            {/* Desktop navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="#features"
-                className="text-sm font-medium text-gray-300 hover:text-white"
-              >
-                Features
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="text-sm font-medium text-gray-300 hover:text-white"
-              >
-                How It Works
-              </Link>
-              <Link
-                href="#about"
-                className="text-sm font-medium text-gray-300 hover:text-white"
-              >
-                About
-              </Link>
-              <Link href="#">
-                <Button
-                  onClick={() => mutation.mutate()}
-                  asChild
-                  variant="default"
-                  className="bg-white text-[#0f1524] hover:bg-gray-200"
-                >
-                  <span>
-                    <Google className="mr-2 h-4 w-4" />
-                    Login with Google
-                  </span>
-                </Button>
-              </Link>
-            </nav>
-          </div>
+                    {/* Login with Discord Button */}
+                    <Button
+                        onClick={() => discordAuthMutation.mutate()}
+                        variant="outline"
+                        className="w-full bg-muted hover:bg-muted text-foreground border-border font-medium"
+                    >
+                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.317 4.3698C18.9998 3.8066 17.6336 3.3378 16.2376 3.0178C16.2152 3.0134 16.1922 3.0222 16.1772 3.0402C15.9632 3.323 15.7362 3.6618 15.5932 3.9126C13.8072 3.635 12.0262 3.635 10.2522 3.9126C10.1092 3.6618 9.8822 3.323 9.6672 3.0402C9.6522 3.0222 9.6292 3.0134 9.6068 3.0178C8.2108 3.3378 6.8446 3.8066 5.5274 4.3698C5.513 4.3762 5.5012 4.3878 5.4932 4.4022C2.5332 9.0366 1.4192 13.5222 1.6692 17.9658C1.6696 17.9738 1.6742 17.981 1.6812 17.9846C3.5042 19.3238 5.2762 20.0938 7.0122 20.4846C7.0352 20.4898 7.0582 20.4782 7.0702 20.457C7.2772 20.1042 7.4612 19.7438 7.6242 19.377C7.6512 19.3162 7.6202 19.2478 7.5562 19.233C7.1532 19.1402 6.7652 19.0218 6.3892 18.8802C6.3242 18.855 6.3192 18.7614 6.3802 18.7326C6.4712 18.6894 6.5622 18.6442 6.6512 18.597C10.4322 20.2938 13.5682 20.2938 17.3482 18.597C17.4372 18.6442 17.5282 18.6894 17.6192 18.7326C17.6802 18.7614 17.6752 18.855 17.6102 18.8802C17.2342 19.0218 16.8462 19.1402 16.4432 19.233C16.3792 19.2478 16.3482 19.3162 16.3752 19.377C16.5382 19.7438 16.7222 20.1042 16.9292 20.457C16.9412 20.4782 16.9642 20.4898 16.9872 20.4846C18.7232 20.0938 20.4952 19.3238 22.3182 17.9846C22.3252 17.981 22.3298 17.9738 22.3302 17.9658C22.5802 13.5222 21.4662 9.0366 18.5062 4.4022C18.4982 4.3878 18.4864 4.3762 18.472 4.3698H20.317ZM8.0202 15.3318C7.2952 15.3318 6.7032 14.6934 6.7032 13.9314C6.7032 13.1694 7.2812 12.531 8.0202 12.531C8.7652 12.531 9.3532 13.1754 9.3402 13.9314C9.3402 14.6934 8.7652 15.3318 8.0202 15.3318ZM15.9792 15.3318C15.2542 15.3318 14.6622 14.6934 14.6622 13.9314C14.6622 13.1694 15.2402 12.531 15.9792 12.531C16.7242 12.531 17.3122 13.1754 17.2992 13.9314C17.2992 14.6934 16.7242 15.3318 15.9792 15.3318Z" fill="#5865F2" />
+                        </svg>
+                        Login with Discord
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="space-y-1 px-2 pb-3 pt-2">
-              <Link
-                href="#features"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Features
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                How It Works
-              </Link>
-              <Link
-                href="#about"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                About
-              </Link>
-              <Link
-                href="#login"
-                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <div className="flex items-center">
-                  <Google className="mr-2 h-4 w-4" />
-                  Login with Google
-                </div>
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
-
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div
-            className="flex container mx-auto px-4 md:px-6"
-            style={{ maxWidth: "1280px" }}
-          >
-            <div className="grid gap-6 lg:gap-12 items-center mx-auto">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Play Neural Decks,{" "}
-                    <span className="text-purple-400 block sm:inline">
-                      Powered by AI
-                    </span>
-                  </h1>
-                  <p className="max-w-[600px] text-gray-400 md:text-xl">
-                    Play Neural Decks for free. Neural Decks is a real-time
-                    online card game you can play with friends or random people.
-                    Our AI generates unique, hilarious card decks that keep the
-                    game fresh every time you play.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-white text-[#0f1524] hover:bg-gray-200"
-                  >
-                    <Link href="#login">
-                      <Google className="mr-2 h-4 w-4" />
-                      Login with Google
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Card Preview Section */}
-        <section className="w-full py-12 md:py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-transparent"></div>
-          <div
-            className="container mx-auto px-4 md:px-6 relative"
-            style={{ maxWidth: "1280px" }}
-          >
-            <div className="mx-auto flex flex-col items-center space-y-4 text-center">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Endless Possibilities
-              </h2>
-              <p className="max-w-[700px] text-gray-400 md:text-xl">
-                Our AI card generation feature creates card combinations that
-                you won't find in other traditional card games, giving each game
-                a feel of uniqueness.
-              </p>
-            </div>
-
-            <div className="mt-16 flex flex-wrap justify-center gap-4 md:gap-8">
-              {/* Black Card */}
-              <div className="relative h-64 w-48 rounded-lg bg-black p-4 shadow-lg transform rotate-[-5deg]">
-                <p className="font-medium">In a world overrun by zombies.</p>
-                <div className="absolute bottom-4 left-4 text-xs text-gray-500">
-                  Neural Decks
-                </div>
-              </div>
-
-              {/* White Cards */}
-              <div className="relative h-64 w-48 rounded-lg bg-white p-4 shadow-lg text-black transform rotate-[3deg]">
-                <p className="font-medium">
-                  A horde of kittens with laser eyes.
-                </p>
-                <div className="absolute bottom-4 left-4 text-xs text-gray-500">
-                  Neural Decks
-                </div>
-              </div>
-
-              <div className="relative h-64 w-48 rounded-lg bg-white p-4 shadow-lg text-black transform rotate-[8deg] hidden sm:block">
-                <p className="font-medium">
-                  The neighbor's garden gnomes coming to life.
-                </p>
-                <div className="absolute bottom-4 left-4 text-xs text-gray-500">
-                  Neural Decks
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
-          <div
-            className="container mx-auto px-4 md:px-6"
-            style={{ maxWidth: "1280px" }}
-          >
-            <div className="mx-auto flex flex-col items-center space-y-4 text-center">
-              <div className="inline-block rounded-lg bg-purple-900/20 px-3 py-1 text-sm text-purple-400">
-                Features
-              </div>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Why Play?
-              </h2>
-              <p className="max-w-[700px] text-gray-400 md:text-xl">
-                Neural Decks takes a twist on traditional card games by using
-                AI-powered features.
-              </p>
-            </div>
-
-            <div
-              className="mx-auto grid gap-8 py-12 sm:grid-cols-2 md:grid-cols-3"
-              style={{ maxWidth: "1024px" }}
-            >
-              <Card className="bg-[#121a2f] border-gray-800 shadow-xl">
-                <div className="flex flex-col items-center p-6 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-900/20 text-purple-400">
-                    <Brain className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-bold">AI-Generated Decks</h3>
-                  <p className="mt-2 text-gray-400">
-                    Our AI creates unique card combinations that keep the game
-                    fresh and unpredictable.
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="bg-[#121a2f] border-gray-800 shadow-xl">
-                <div className="flex flex-col items-center p-6 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-900/20 text-purple-400">
-                    <Users className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-bold">Play With Friends</h3>
-                  <p className="mt-2 text-gray-400">
-                    Invite friends to join your game room and play together no
-                    matter where you are.
-                  </p>
-                </div>
-              </Card>
-
-              <Card className="bg-[#121a2f] border-gray-800 shadow-xl sm:col-span-2 md:col-span-1">
-                <div className="flex flex-col items-center p-6 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-900/20 text-purple-400">
-                    <Shuffle className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-bold">Endless Variety</h3>
-                  <p className="mt-2 text-gray-400">
-                    Never play the same game twice. Choose a subject to create a
-                    new unique deck to keep games fresh and replayable.
-                  </p>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section
-          id="how-it-works"
-          className="w-full py-12 md:py-24 lg:py-32 bg-[#121a2f]"
-        >
-          <div
-            className="container mx-auto px-4 md:px-6"
-            style={{ maxWidth: "1280px" }}
-          >
-            <div className="mx-auto flex flex-col items-center space-y-4 text-center">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                How It Works
-              </h2>
-              <p className="max-w-[700px] text-gray-400 md:text-xl">
-                Playing is simple.
-              </p>
-            </div>
-
-            <div
-              className="mx-auto grid gap-8 py-12 sm:grid-cols-2 md:grid-cols-3"
-              style={{ maxWidth: "1024px" }}
-            >
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0f1524] font-bold text-xl">
-                  1
-                </div>
-                <h3 className="mt-4 text-xl font-bold">Login with Google</h3>
-                <p className="mt-2 text-gray-400">
-                  Sign in with your Google account to access the game.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0f1524] font-bold text-xl">
-                  2
-                </div>
-                <h3 className="mt-4 text-xl font-bold">
-                  Create or Join a Game
-                </h3>
-                <p className="mt-2 text-gray-400">
-                  Start a new game room or join an existing one with friends or
-                  randoms.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center text-center sm:col-span-2 md:col-span-1">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0f1524] font-bold text-xl">
-                  3
-                </div>
-                <h3 className="mt-4 text-xl font-bold">Play and Enjoy</h3>
-                <p className="mt-2 text-gray-400">
-                  Experience the uniqueness of AI-generated cards for maximum
-                  replayability
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA Section */}
-        <section id="login" className="w-full py-12 md:py-24 lg:py-32">
-          <div
-            className="container mx-auto px-4 md:px-6"
-            style={{ maxWidth: "1280px" }}
-          >
-            <div className="mx-auto flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight">
-                  Ready to play?
-                </h2>
-                <p className="max-w-[600px] text-gray-400 md:text-xl/relaxed">
-                  {/* Join many others already enjoying our AI-powered card game. */}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-[#0f1524] hover:bg-gray-200"
-                >
-                  <Link href="#login">
-                    <Google className="mr-2 h-4 w-4" />
-                    Login with Google
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full border-t border-gray-800 bg-[#0a0f1a] py-12">
-        <div
-          className="container mx-auto px-4 md:px-6"
-          style={{ maxWidth: "1280px" }}
-        >
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="flex flex-col space-y-4">
-              <Link href="/" className="flex items-center gap-2">
-                {/* <Image
-                  src="/placeholder.svg?height=32&width=32"
-                  width={32}
-                  height={32}
-                  alt="Logo"
-                  className="rounded"
-                /> */}
-                <span className="text-xl font-bold">Neural Decks </span>
-                <div className="inline-block rounded-lg bg-purple-900/20 px-3 py-1 text-sm text-purple-400">
-                  Beta
-                </div>
-              </Link>
-              <p className="max-w-[400px] text-sm text-gray-400">
-                Neural Decks is a real-time AI-powered card game you can play
-                with friends or random people. Our platform uses artificial
-                intelligence to create unique, hilarious card combinations to
-                keep games fresh & unique.
-              </p>
-              <div className="flex gap-4">
-                <Link href="#" className="text-gray-400 hover:text-white">
-                  <Twitter className="h-5 w-5" />
-                  <span className="sr-only">Twitter</span>
-                </Link>
-                <Link href="#" className="text-gray-400 hover:text-white">
-                  <Github className="h-5 w-5" />
-                  <span className="sr-only">GitHub</span>
-                </Link>
-              </div>
-            </div>
-            <div className="grid gap-8 sm:grid-cols-2">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Links</h3>
-                <ul className="space-y-2 text-sm">
-                  <li>
-                    <Link
-                      href="#features"
-                      className="text-gray-400 hover:text-white"
-                    >
-                      Features
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#how-it-works"
-                      className="text-gray-400 hover:text-white"
-                    >
-                      How It Works
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href="#about"
-                      className="text-gray-400 hover:text-white"
-                    >
-                      About
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              {/* <div className="space-y-4">
-                <h3 className="text-sm font-medium">Legal</h3>
-                <ul className="space-y-2 text-sm">
-                  <li>
-                    <Link href="#" className="text-gray-400 hover:text-white">
-                      Privacy Policy
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="text-gray-400 hover:text-white">
-                      Terms of Service
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="text-gray-400 hover:text-white">
-                      Cookie Policy
-                    </Link>
-                  </li>
-                </ul>
-              </div> */}
-            </div>
-          </div>
-          {/* <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-800 py-6 md:h-24 md:flex-row md:py-0 mt-8"> */}
-          {/* <p className="text-center text-sm text-gray-400 md:text-left">
-              &copy; {new Date().getFullYear()} Neural Decks
-            </p> */}
-          {/* <p className="text-center text-sm text-gray-400 md:text-left">
-              Not affiliated with Cards Against Humanity LLC.
-            </p> */}
-          {/* </div> */}
-        </div>
-      </footer>
-    </div>
-  );
+    )
 }

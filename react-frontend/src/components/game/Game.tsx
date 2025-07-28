@@ -10,10 +10,13 @@ import useWebSocket from "react-use-websocket";
 import { SiteHeader } from "../site-header";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Card, CardContent } from "../ui/card";
+import GameBoardChat from "./Chat";
+import { Spinner } from "../ui/spinner";
 
 export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
   const [game, setGame] = useState<Game | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const { user } = useAuth();
 
   // Function to handle incoming WebSocket messages
@@ -21,11 +24,13 @@ export default function GameComponent() {
     type: string;
     payload: any;
   }) => {
+    debugger;
     switch (message.type) {
       case "GAME_UPDATE":
         setGame(message.payload);
         break;
       case "CHAT_MESSAGE":
+        setChatMessages([...chatMessages, message.payload]);
         break;
       default:
     }
@@ -107,18 +112,20 @@ export default function GameComponent() {
     );
   };
 
-  if (!game) {
-    return null;
-  }
-
-  if (readyState !== 1) {
-    return <div>Loading...</div>;
+  if (readyState !== 1 || !game)  {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+        <h2 className="text-2xl font-bold mb-4">Connecting to game...</h2>
+        <Spinner />
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      <SiteHeader title={`Game: ${game.Name}`} />
-
+      <SiteHeader title={`Game: ${game.name}`} />
       <div className="flex flex-col">
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -137,11 +144,8 @@ export default function GameComponent() {
                 </div>
 
                 {/* Chat */}
-                <div className="sm:col-span-1">
-                  <div>Chatroom</div>
-                  <div>{game.status}</div>
-                  <div>{game.round_status}</div>
-                </div>
+                <GameBoardChat chatMessages={chatMessages} />
+         
               </div>
             </div>
 
@@ -156,7 +160,7 @@ export default function GameComponent() {
         </div>
       </div>
 
-      <div className="w-full absolute bottom-0 top-0 flex justify-center">
+      <div className="w-full absolute bottom-0 flex justify-center">
         {/* Player's hand */}
         <PlayerHand game={game} handlePlayCard={handlePlayCard} />
       </div>
@@ -213,3 +217,5 @@ function JoinGameGrid(props: { game: Game }) {
     </div>
   );
 }
+
+

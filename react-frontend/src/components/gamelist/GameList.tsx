@@ -191,7 +191,7 @@ function Games(props: { games: Game[] }) {
 
               <Button
                 variant="secondary"
-                onClick={() => handleEnterGameRoom(game.ID)}
+                onClick={() => handleEnterGameRoom(game.id)}
                 size="sm"
               >
                 <CircleArrowRight />
@@ -248,6 +248,7 @@ function Games(props: { games: Game[] }) {
                   </div>
                 </ScrollArea>
               </div>
+              
             </div>
           </Card>
         ))}

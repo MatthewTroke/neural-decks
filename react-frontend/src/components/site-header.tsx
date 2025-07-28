@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Link } from "react-router";
+import { Badge } from "./ui/badge";
 
 export function SiteHeader({ title }: { title: string }) {
   return (
@@ -16,9 +17,7 @@ export function SiteHeader({ title }: { title: string }) {
       <div className="block md:hidden w-full flex justify-end mx-2">
         <Link to="/" className="flex items-center gap-2">
           <span className="text-md font-bold">Neural Decks</span>
-          <div className="inline-block rounded-lg bg-purple-900/20 px-3 py-1 text-sm text-purple-400">
-            Beta
-          </div>
+          <Badge>Beta</Badge>
         </Link>
       </div>
     </header>

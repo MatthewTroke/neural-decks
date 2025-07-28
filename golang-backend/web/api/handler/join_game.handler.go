@@ -78,7 +78,10 @@ func (h *JoinGameHandler) Handle() error {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
+	log := fmt.Sprintf("%s has joined the game.", h.Claim.Name)
+
 	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
+	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, log)
 
 	jsonMessage, err := json.Marshal(message)
 
@@ -86,7 +89,14 @@ func (h *JoinGameHandler) Handle() error {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.JoinGame, err)
 	}
 
+	jsonChatMessage, err := json.Marshal(chatMessage)
+
+	if err != nil {
+		return fmt.Errorf("unable to marshal chat message: %w", err)
+	}
+
 	h.Hub.Broadcast(jsonMessage)
+	h.Hub.Broadcast(jsonChatMessage)
 
 	return nil
 }

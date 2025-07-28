@@ -139,7 +139,7 @@ func (gc *GameController) CreateGame(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(err)
 	}
 
-	response, err := gc.ChatGPTService.GenerateDeck(request.Subject)
+	response, err := gc.ChatGPTService.GenerateDeckWithFunctionCalling(request.Subject)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(err)
@@ -193,13 +193,27 @@ func (gc *GameController) HandleJoinWebsocketGameRoom(c *websocket.Conn) {
 	game, _ := gc.EventService.GetGameById(roomId)
 
 	websocketMessage := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	log := claim.Name + " has joined the room."
+
+	websocketChatMessage := domain.NewWebSocketMessage(domain.ChatMessage, log)
 
 	gameState, _ := json.Marshal(websocketMessage)
+	chatMessage, _ := json.Marshal(websocketChatMessage)
 
 	c.WriteMessage(websocket.TextMessage, gameState)
+	hub.Broadcast(chatMessage)
+
+	// Capture the user's name for the leave message
+	userName := claim.Name
 
 	defer func() {
 		hub.UnregisterClient(c)
+
+		// Broadcast leave message
+		leaveLog := userName + " has left the room."
+		websocketLeaveMessage := domain.NewWebSocketMessage(domain.ChatMessage, leaveLog)
+		leaveMessage, _ := json.Marshal(websocketLeaveMessage)
+		hub.Broadcast(leaveMessage)
 
 		if len(hub.Clients) == 0 {
 			gc.RoomManager.RemoveRoom(roomId)

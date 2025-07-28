@@ -13,6 +13,7 @@ import {
 } from "react-router-dom";
 import { Navigation } from "./components/shared/Navigation";
 import "./index.css";
+import LandingPage from "@/components/landing/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/games"

@@ -30,14 +30,14 @@ const (
 	PlayCard        InboundWebsocketGameType = "PLAY_CARD"
 	PickWinningCard InboundWebsocketGameType = "PICK_WINNING_CARD"
 	ContinueRound   InboundWebsocketGameType = "CONTINUE_ROUND"
-	ChatMessage     InboundWebsocketGameType = "CHAT_MESSAGE"
 	BeginGame       InboundWebsocketGameType = "BEGIN_GAME"
 )
 
 type OutboundWebsocketGameType string
 
 const (
-	GameUpdate OutboundWebsocketGameType = "GAME_UPDATE"
+	GameUpdate  OutboundWebsocketGameType = "GAME_UPDATE"
+	ChatMessage OutboundWebsocketGameType = "CHAT_MESSAGE"
 )
 
 type RoundStatus string
@@ -110,15 +110,19 @@ func NewGameEventPayloadJoinedGame(gameID string, userID string, claim *CustomCl
 	}
 }
 
-type GameEventPayloadGameRoundContinued struct {
-	GameID string `json:"game_id"`
-	UserID string `json:"user_id"`
+type GameEventPayloadGameRoundContinuedWithCards struct {
+	GameID      string            `json:"game_id"`
+	UserID      string            `json:"user_id"`
+	PlayerCards map[string]string `json:"player_cards"`  // playerID -> cardID
+	BlackCardID string            `json:"black_card_id"` // cardID for the new black card
 }
 
-func NewGameEventPayloadGameRoundContinued(gameID string, userID string) GameEventPayloadGameRoundContinued {
-	return GameEventPayloadGameRoundContinued{
-		GameID: gameID,
-		UserID: userID,
+func NewGameEventPayloadGameRoundContinuedWithCards(gameID string, userID string, playerCards map[string]string, blackCardID string) GameEventPayloadGameRoundContinuedWithCards {
+	return GameEventPayloadGameRoundContinuedWithCards{
+		GameID:      gameID,
+		UserID:      userID,
+		PlayerCards: playerCards,
+		BlackCardID: blackCardID,
 	}
 }
 
@@ -596,19 +600,30 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 
 		g.Players = append(g.Players, player)
 	case EventRoundContinued:
-		var payload GameEventPayloadGameRoundContinued
+		var payload GameEventPayloadGameRoundContinuedWithCards
 
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("failed to unmarshal EventGameBegins payload: %w", err)
 		}
 
+		// Remove placed cards and give new cards based on payload
 		for _, player := range g.Players {
 			if player.IsCardCzar {
 				continue
 			}
 
 			player.RemovePlacedCard()
-			player.Deck = append(player.Deck, g.Collection.DrawCards(1, White)...)
+
+			// Check if this player should get a new card
+			if cardID, exists := payload.PlayerCards[player.UserID]; exists {
+				// Find the card in the collection
+				for _, card := range g.Collection.Cards {
+					if card.ID == cardID {
+						player.Deck = append(player.Deck, card)
+						break
+					}
+				}
+			}
 		}
 
 		// game.RemovePlacedCards()
@@ -632,10 +647,15 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 			return fmt.Errorf("could not pick new card czar: %w", err)
 		}
 
-		err = g.PickNewBlackCard()
-
-		if err != nil {
-			return fmt.Errorf("could not pick new black card: %w", err)
+		// Set the new black card based on the payload
+		if payload.BlackCardID != "" {
+			// Find the black card in the collection
+			for _, card := range g.Collection.Cards {
+				if card.ID == payload.BlackCardID {
+					g.BlackCard = card
+					break
+				}
+			}
 		}
 
 		g.IncrementGameRound()

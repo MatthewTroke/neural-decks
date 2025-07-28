@@ -24,6 +24,8 @@ func main() {
 
 	log.SetOutput(multiwriter)
 
+	log.Println("🚀 Hot reload test - this should appear when you save!123")
+
 	app := bootstrap.App()
 
 	env := app.Env

@@ -37,24 +37,6 @@ export default function Players(props: {
   return (
     <div>
       <div className="flex justify-between items-start mb-4">
-        <div className="space-y-1">
-          {/* <h3 className="font-semibold">Game #{props.game.id}</h3> */}
-          <Badge
-          // variant={
-          //   game.status === "In Progress" ? "default" : "secondary"
-          // }
-          >
-            {props.game.status}
-          </Badge>
-          <Badge
-          // variant={
-          //   game.status === "In Progress" ? "default" : "secondary"
-          // }
-          >
-            {props.game.round_status}
-          </Badge>
-        </div>
-
         <JoinGameButton
           game={props.game}
           handleJoinGame={props.handleJoinGame}

@@ -130,6 +130,7 @@ func (h *PickWinningCardHandler) Handle() error {
 	}
 
 	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
+	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Card czar has chosen a winning card.")
 
 	jsonMessage, err := json.Marshal(message)
 
@@ -137,7 +138,14 @@ func (h *PickWinningCardHandler) Handle() error {
 		return errors.New("failed to marshal message")
 	}
 
+	jsonChatMessage, err := json.Marshal(chatMessage)
+
+	if err != nil {
+		return fmt.Errorf("unable to marshal chat message: %w", err)
+	}
+
 	h.Hub.Broadcast(jsonMessage)
+	h.Hub.Broadcast(jsonChatMessage)
 
 	return nil
 }

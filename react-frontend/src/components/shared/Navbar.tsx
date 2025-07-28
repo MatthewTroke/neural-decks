@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Link } from "react-router";
-import { ChromeIcon as Google, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { Badge } from "../ui/badge";
 
 export function Navbar() {
   const { user } = useAuth();
@@ -36,9 +37,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2">
               <span className="text-xl font-bold">Neural Decks</span>
-              <div className="inline-block rounded-lg bg-purple-900/20 px-3 py-1 text-sm text-purple-400">
-                Beta
-              </div>
+              <Badge>Beta</Badge>
             </Link>
           </div>
 
@@ -87,34 +86,13 @@ export function Navbar() {
         <div className="md:hidden">
           <div className="space-y-1 px-2 pb-3 pt-2">
             <Link
-              href="#features"
+              to="/login"
               className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Features
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              How It Works
-            </Link>
-            <Link
-              href="#about"
-              className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About
-            </Link>
-            <Link
-              href="#login"
-              className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+              Report a bug
               <div className="flex items-center">
-                <Google className="mr-2 h-4 w-4" />
-                Login with Google
+                Login
               </div>
             </Link>
           </div>

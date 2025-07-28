@@ -15,4 +15,5 @@ type User struct {
 	Email         string `gorm:"unique;column:email"`
 	EmailVerified bool   `gorm:"column:email_verified"`
 	Image         string `gorm:"column:image"`
+	Provider      string `gorm:"column:provider"`
 }

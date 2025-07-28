@@ -152,3 +152,71 @@ func (r *RedisEventRepository) DeleteGameEvents(gameID string) error {
 
 	return nil
 }
+
+func (r *RedisEventRepository) AddUsedCard(gameID, cardID string) error {
+	ctx := context.Background()
+	usedCardsKey := fmt.Sprintf("game:used_cards:%s", gameID)
+
+	err := r.client.SAdd(ctx, usedCardsKey, cardID).Err()
+	if err != nil {
+		return fmt.Errorf("failed to add used card to Redis: %w", err)
+	}
+
+	return nil
+}
+
+func (r *RedisEventRepository) GetUsedCards(gameID string) ([]string, error) {
+	ctx := context.Background()
+	usedCardsKey := fmt.Sprintf("game:used_cards:%s", gameID)
+
+	cardIDs, err := r.client.SMembers(ctx, usedCardsKey).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get used cards from Redis: %w", err)
+	}
+
+	fmt.Println("cardIDs", cardIDs)
+	return cardIDs, nil
+}
+
+func (r *RedisEventRepository) IsCardUsed(gameID, cardID string) (bool, error) {
+	ctx := context.Background()
+	usedCardsKey := fmt.Sprintf("game:used_cards:%s", gameID)
+
+	isMember, err := r.client.SIsMember(ctx, usedCardsKey, cardID).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check if card is used: %w", err)
+	}
+
+	return isMember, nil
+}
+
+func (r *RedisEventRepository) ClearUsedCards(gameID string) error {
+	ctx := context.Background()
+	usedCardsKey := fmt.Sprintf("game:used_cards:%s", gameID)
+
+	err := r.client.Del(ctx, usedCardsKey).Err()
+	if err != nil {
+		return fmt.Errorf("failed to clear used cards from Redis: %w", err)
+	}
+
+	return nil
+}
+
+// AddUsedCards adds multiple card IDs to the set of used cards for a game in a single operation
+func (r *RedisEventRepository) AddUsedCards(gameID string, cardIDs []string) error {
+	ctx := context.Background()
+	usedCardsKey := fmt.Sprintf("game:used_cards:%s", gameID)
+
+	// Convert string slice to interface slice for SAdd
+	members := make([]interface{}, len(cardIDs))
+	for i, cardID := range cardIDs {
+		members[i] = cardID
+	}
+
+	err := r.client.SAdd(ctx, usedCardsKey, members...).Err()
+	if err != nil {
+		return fmt.Errorf("failed to add used cards to Redis: %w", err)
+	}
+
+	return nil
+}

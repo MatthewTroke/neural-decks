@@ -6,8 +6,19 @@ import (
 	"cardgame/services"
 	"encoding/json"
 	"fmt"
-	"time"
+	"hash/fnv"
 )
+
+// hash creates a deterministic hash from a string
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
+
+type BeginGamePayload struct {
+	GameID string `json:"game_id"`
+}
 
 type BeginGameHandler struct {
 	Payload          request.GameEventPayloadGameBeginsRequest
@@ -91,7 +102,8 @@ func (h *BeginGameHandler) Handle() error {
 	}
 
 	// 2. Create shuffle event with deterministic seed
-	shuffleSeed := time.Now().UnixNano() // You could also use a hash of game ID + timestamp
+	// Use a hash of the game ID to ensure deterministic shuffling
+	shuffleSeed := int64(hash(h.Payload.GameID))
 
 	shuffleEvent, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
@@ -109,12 +121,31 @@ func (h *BeginGameHandler) Handle() error {
 	}
 
 	// 3. Deal cards to each player with specific card IDs
+	// Get currently used cards from Redis
+	usedCardIDs, err := h.EventService.GetUsedCards(h.Payload.GameID)
+
+	if err != nil {
+		return fmt.Errorf("failed to get used cards from Redis: %w", err)
+	}
+
+	// Convert to map for efficient lookup
+	usedCardsMap := make(map[string]bool)
+
+	for _, cardID := range usedCardIDs {
+		usedCardsMap[cardID] = true
+	}
+
+	// Collect all cards to be used for batching Redis operations
+	allUsedCardIDs := []string{}
+
 	for _, player := range game.Players {
-		// Find 7 white cards in the collection without removing them
+		// Find 7 white cards in the collection that haven't been used yet
 		whiteCards := []*domain.Card{}
 		for _, card := range game.Collection.Cards {
-			if card.Type == "White" && len(whiteCards) < 7 {
+			if card.Type == "White" && len(whiteCards) < 7 && !usedCardsMap[card.ID] {
 				whiteCards = append(whiteCards, card)
+				usedCardsMap[card.ID] = true                     // Mark this card as used
+				allUsedCardIDs = append(allUsedCardIDs, card.ID) // Collect for batch operation
 			}
 		}
 
@@ -149,8 +180,10 @@ func (h *BeginGameHandler) Handle() error {
 	// 4. Draw black card with specific card ID
 	blackCards := []*domain.Card{}
 	for _, card := range game.Collection.Cards {
-		if card.Type == "Black" && len(blackCards) < 1 {
+		if card.Type == "Black" && len(blackCards) < 1 && !usedCardsMap[card.ID] {
 			blackCards = append(blackCards, card)
+			usedCardsMap[card.ID] = true                     // Mark this card as used
+			allUsedCardIDs = append(allUsedCardIDs, card.ID) // Collect for batch operation
 		}
 	}
 
@@ -176,6 +209,13 @@ func (h *BeginGameHandler) Handle() error {
 		}
 	}
 
+	// Batch add all used cards to Redis in a single operation
+	if len(allUsedCardIDs) > 0 {
+		if err := h.EventService.AddUsedCards(h.Payload.GameID, allUsedCardIDs); err != nil {
+			return fmt.Errorf("failed to add used cards to Redis: %w", err)
+		}
+	}
+
 	// Persist game begins and shuffle events
 	if err := h.EventService.AppendEvent(shuffleEvent); err != nil {
 		return fmt.Errorf("failed to persist shuffle event: %w", err)
@@ -185,6 +225,7 @@ func (h *BeginGameHandler) Handle() error {
 	}
 
 	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Game has begun.")
 
 	jsonMessage, err := json.Marshal(message)
 
@@ -192,7 +233,14 @@ func (h *BeginGameHandler) Handle() error {
 		return fmt.Errorf("unable to marshal game update: %w", err)
 	}
 
+	jsonChatMessage, err := json.Marshal(chatMessage)
+
+	if err != nil {
+		return fmt.Errorf("unable to marshal chat message: %w", err)
+	}
+
 	h.Hub.Broadcast(jsonMessage)
+	h.Hub.Broadcast(jsonChatMessage)
 
 	return nil
 }

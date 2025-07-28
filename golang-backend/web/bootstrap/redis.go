@@ -35,6 +35,9 @@ func NewRedisInstance(env *Env) *redis.Client {
 		redisDB = 0
 	}
 
+	// Debug: Print Redis configuration
+	log.Printf("🔍 Redis Config - Host: %s, Port: %s, DB: %d", redisHost, redisPort, redisDB)
+
 	redisOnce.Do(func() {
 		client := redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),

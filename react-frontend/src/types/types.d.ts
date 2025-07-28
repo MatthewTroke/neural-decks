@@ -20,44 +20,44 @@ interface User {
 }
 
 interface Card {
-  ID: string;
-  Type: CardType;
-  CardValue: string;
+  id: string;
+  type: CardType;
+  card_value: string;
 }
 
 interface Collection {
-  Cards: Card[];
+  cards: Card[];
 }
 
 interface Player {
-  Score: number;
-  Role: PlayerRole;
-  UserID: string;
-  Name: string;
-  Image?: string; // Optional image field
-  Deck: Card[]; // Array of cards in the player's deck
-  IsCardCzar: boolean;
-  WasCardCzar: boolean;
-  PlacedCard?: Card | null; // Nullable placed card
-  IsRoundWinner: boolean;
-  IsGameWinner: boolean;
+  score: number;
+  role: PlayerRole;
+  user_id: string;
+  name: string;
+  image?: string; // Optional image field
+  deck: Card[]; // Array of cards in the player's deck
+  is_card_czar: boolean;
+  was_card_czar: boolean;
+  placed_card?: Card | null; // Nullable placed card
+  is_round_winner: boolean;
+  is_game_winner: boolean;
 }
 
 interface Game {
-  ID: string;
-  Name: string;
-  Collection: Collection;
-  WinnerCount: number;
-  MaxPlayerCount: number;
-  Status: GameStatus;
-  Players: Player[];
-  WhiteCards: Card[];
-  BlackCard: Card | null;
-  RoundStatus: RoundStatus;
-  RoundWinner: Player;
-  CurrentGameRound: number;
-  LastVacatedAt: Date | null;
-  Vacated: boolean;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  id: string;
+  name: string;
+  collection: Collection;
+  winner_count: number;
+  max_player_count: number;
+  status: GameStatus;
+  players: Player[];
+  white_cards: Card[];
+  black_card: Card | null;
+  round_status: RoundStatus;
+  round_winner: Player;
+  current_game_round: number;
+  last_vacated_at: Date | null;
+  vacated: boolean;
+  created_at: Date;
+  updated_at: Date;
 }

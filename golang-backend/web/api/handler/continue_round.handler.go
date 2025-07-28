@@ -2,6 +2,8 @@ package handler
 
 import (
 	"cardgame/domain"
+	"cardgame/request"
+	"cardgame/services"
 	"encoding/json"
 	"fmt"
 )
@@ -11,23 +13,25 @@ type ContinueRoundPayload struct {
 }
 
 type ContinueRoundHandler struct {
-	Payload ContinueRoundPayload
-	GameSvc domain.GameService
-	Claim   *domain.CustomClaim
-	Hub     *domain.Hub
+	Payload          request.GameEventPayloadGameRoundContinuedRequest
+	EventService     *services.EventService
+	GameStateService *services.GameStateService
+	Claim            *domain.CustomClaim
+	Hub              *domain.Hub
 }
 
-func NewContinueRoundHandler(payload ContinueRoundPayload, gameSvc domain.GameService, claim *domain.CustomClaim, hub *domain.Hub) *ContinueRoundHandler {
+func NewContinueRoundHandler(payload request.GameEventPayloadGameRoundContinuedRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *ContinueRoundHandler {
 	return &ContinueRoundHandler{
-		Payload: payload,
-		GameSvc: gameSvc,
-		Claim:   claim,
-		Hub:     hub,
+		Payload:          payload,
+		EventService:     eventService,
+		GameStateService: gameStateService,
+		Claim:            claim,
+		Hub:              hub,
 	}
 }
 
 func (h *ContinueRoundHandler) Validate() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
@@ -43,55 +47,33 @@ func (h *ContinueRoundHandler) Validate() error {
 }
 
 func (h *ContinueRoundHandler) Handle() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.BeginGame, err)
 	}
 
-	game.Lock()
-	defer game.Unlock()
-
-	// game.RemovePlacedCards()
-	// game.DrawWhiteCardsFromAllPlayersWhoPlayed()
-
-	for _, player := range game.Players {
-		if player.IsCardCzar {
-			continue
-		}
-
-		player.RemovePlacedCard()
-		player.Deck = append(player.Deck, game.Collection.DrawCards(1, domain.White)...)
-	}
-
-	currentCardCzar, err := game.FindCurrentCardCzar()
+	event, err := h.EventService.CreateGameEvent(
+		h.Payload.GameID,
+		domain.EventRoundContinued,
+		domain.NewGameEventPayloadGameRoundContinued(h.Payload.GameID, h.Payload.UserID),
+	)
 
 	if err != nil {
-		return fmt.Errorf("could not continue round: %w", err)
+		return fmt.Errorf("failed to create event: %w", err)
 	}
 
-	currentCardCzar.SetIsCardCzar(false)
-	currentCardCzar.SetWasCardCzar(true)
+	newGame := game.Clone()
 
-	game.SetRoundWinner(nil)
-	game.ClearBoard()
-
-	err = game.PickNewCardCzar()
-
-	if err != nil {
-		return fmt.Errorf("could not pick new card czar: %w", err)
+	if err := newGame.ApplyEvent(event); err != nil {
+		return fmt.Errorf("failed to apply event: %w", err)
 	}
 
-	err = game.PickNewBlackCard()
-
-	if err != nil {
-		return fmt.Errorf("could not pick new black card: %w", err)
+	if err := h.EventService.AppendEvent(event); err != nil {
+		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	game.IncrementGameRound()
-	game.SetRoundStatus(domain.PlayersPickingCard)
-
-	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
 
 	jsonMessage, err := json.Marshal(message)
 

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"cardgame/domain"
+	"cardgame/request"
+	"cardgame/services"
 	"encoding/json"
 	"fmt"
 )
@@ -12,23 +14,25 @@ type PlayCardPayload struct {
 }
 
 type PlayCardHandler struct {
-	Payload PlayCardPayload
-	GameSvc domain.GameService
-	Claim   *domain.CustomClaim
-	Hub     *domain.Hub
+	Payload          request.GameEventPayloadPlayCardRequest
+	EventService     *services.EventService
+	GameStateService *services.GameStateService
+	Claim            *domain.CustomClaim
+	Hub              *domain.Hub
 }
 
-func NewPlayCardHandler(payload PlayCardPayload, gameSvc domain.GameService, claim *domain.CustomClaim, hub *domain.Hub) *PlayCardHandler {
+func NewPlayCardHandler(payload request.GameEventPayloadPlayCardRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *PlayCardHandler {
 	return &PlayCardHandler{
-		Payload: payload,
-		GameSvc: gameSvc,
-		Claim:   claim,
-		Hub:     hub,
+		Payload:          payload,
+		EventService:     eventService,
+		GameStateService: gameStateService,
+		Claim:            claim,
+		Hub:              hub,
 	}
 }
 
 func (h *PlayCardHandler) Validate() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)
@@ -40,7 +44,7 @@ func (h *PlayCardHandler) Validate() error {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)
 	}
 
-	_, err = game.FindCardByPlayerId(player.UserID, h.Payload.CardID)
+	_, err = game.FindCardByPlayerId(h.Claim.UserID, h.Payload.CardID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)
@@ -58,44 +62,33 @@ func (h *PlayCardHandler) Validate() error {
 }
 
 func (h *PlayCardHandler) Handle() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)
 	}
 
-	player, _ := game.FindPlayerByUserId(h.Claim.UserID)
-	card, _ := game.FindCardByPlayerId(player.UserID, h.Payload.CardID)
-
-	err = player.RemoveCardFromDeck(card.ID)
-
-	if err != nil {
-		return fmt.Errorf("unable to play white card: %w", err)
-	}
-
-	err = player.SetCardAsPlacedCard(card)
+	event, err := h.EventService.CreateGameEvent(
+		h.Payload.GameID,
+		domain.EventCardPlayed,
+		domain.NewGameEventPayloadPlayCard(h.Payload.GameID, h.Payload.CardID, h.Claim),
+	)
 
 	if err != nil {
-		return fmt.Errorf("unable to play white card: %w", err)
+		return fmt.Errorf("failed to create event: %w", err)
 	}
 
-	err = game.AddWhiteCardToGameBoard(card)
+	newGame := game.Clone()
 
-	if err != nil {
-		return fmt.Errorf("unable to play white card: %w", err)
+	if err := newGame.ApplyEvent(event); err != nil {
+		return fmt.Errorf("failed to apply event: %w", err)
 	}
 
-	hasPlayersPlayedWhiteCard, err := game.HasAllPlayersPlayedWhiteCard()
-
-	if err != nil {
-		return fmt.Errorf("unable to play white card: %w", err)
+	if err := h.EventService.AppendEvent(event); err != nil {
+		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	if hasPlayersPlayedWhiteCard {
-		game.SetRoundStatus(domain.CardCzarPickingWinningCard)
-	}
-
-	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
 
 	jsonMessage, err := json.Marshal(message)
 

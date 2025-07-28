@@ -212,3 +212,144 @@
 2025/07/22 18:07:41 The App is running in development env
 2025/07/22 18:22:29 The App is running in development env
 2025/07/22 18:27:01 The App is running in development env
+2025/07/23 15:14:04 The App is running in development env
+2025/07/24 09:37:08 The App is running in development env
+2025/07/24 09:37:11 The App is running in development env
+2025/07/26 21:41:58 The App is running in development env
+2025/07/26 21:41:58 Failed to connect to Redis: dial tcp: lookup redis-10386.c289.us-west-1-2.ec2.redns.redis-cloud.co: no such host
+2025/07/26 21:45:28 The App is running in development env
+2025/07/26 21:45:28 Failed to connect to Redis: dial tcp: lookup redis-10386.c289.us-west-1-2.ec2.redns.redis-cloud.co: no such host
+2025/07/26 22:00:30 The App is running in development env
+2025/07/26 22:00:31 ✅ Redis connected successfully
+2025/07/26 22:04:33 The App is running in development env
+2025/07/26 22:04:34 ✅ Redis connected successfully
+2025/07/26 22:04:54 The App is running in development env
+2025/07/26 22:04:55 ✅ Redis connected successfully
+2025/07/26 22:06:50 The App is running in development env
+2025/07/26 22:06:51 ✅ Redis connected successfully
+2025/07/26 22:08:22 The App is running in development env
+2025/07/26 22:08:23 ✅ Redis connected successfully
+2025/07/26 22:16:36 The App is running in development env
+2025/07/26 22:16:37 ✅ Redis connected successfully
+2025/07/26 22:21:14 The App is running in development env
+2025/07/26 22:21:15 ✅ Redis connected successfully
+2025/07/26 22:25:58 The App is running in development env
+2025/07/26 22:25:59 ✅ Redis connected successfully
+2025/07/26 22:37:22 The App is running in development env
+2025/07/26 22:37:24 ✅ Redis connected successfully
+2025/07/27 12:53:59 The App is running in development env
+2025/07/27 12:54:00 ✅ Redis connected successfully
+2025/07/27 12:56:01 The App is running in development env
+2025/07/27 12:56:01 ✅ Redis connected successfully
+2025/07/27 12:56:41 The App is running in development env
+2025/07/27 12:56:42 ✅ Redis connected successfully
+2025/07/27 12:58:52 The App is running in development env
+2025/07/27 12:58:53 ✅ Redis connected successfully
+2025/07/27 13:08:08 The App is running in development env
+2025/07/27 13:08:08 ✅ Redis connected successfully
+2025/07/27 15:39:47 The App is running in development env
+2025/07/27 15:39:47 ✅ Redis connected successfully
+2025/07/27 15:45:40 The App is running in development env
+2025/07/27 15:45:41 ✅ Redis connected successfully
+2025/07/27 15:53:28 The App is running in development env
+2025/07/27 15:53:29 ✅ Redis connected successfully
+2025/07/27 15:57:08 The App is running in development env
+2025/07/27 15:57:09 ✅ Redis connected successfully
+2025/07/27 16:01:14 The App is running in development env
+2025/07/27 16:01:15 ✅ Redis connected successfully
+2025/07/27 17:22:47 The App is running in development env
+2025/07/27 17:22:47 ✅ Redis connected successfully
+2025/07/27 17:25:05 The App is running in development env
+2025/07/27 17:25:06 ✅ Redis connected successfully
+2025/07/27 17:34:31 The App is running in development env
+2025/07/27 17:34:32 ✅ Redis connected successfully
+2025/07/27 17:41:35 The App is running in development env
+2025/07/27 17:41:36 ✅ Redis connected successfully
+2025/07/27 17:49:41 The App is running in development env
+2025/07/27 17:49:42 ✅ Redis connected successfully
+2025/07/27 17:51:27 The App is running in development env
+2025/07/27 17:51:27 ✅ Redis connected successfully
+2025/07/27 17:57:35 The App is running in development env
+2025/07/27 17:57:36 ✅ Redis connected successfully
+2025/07/27 17:58:14 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:58:14   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:58:14   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:58:14   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:58:14 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:58:14 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:58:14   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:58:14   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:58:14   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:58:14 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:58:24 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:58:24   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:58:24   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:58:24   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:58:24 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:58:25 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:58:25   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:58:25   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:58:25   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:58:25 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:59:22 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:59:22   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:59:22   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:59:22   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:59:22 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:59:23 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:59:23   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:59:23   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:59:23   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:59:23 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 17:59:24 Looking for card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 17:59:24   Card 0: ID=ede1e429-2039-48ec-99ba-8b63ea82c2b6, Type=White, Value=My plans vs. 2020
+2025/07/27 17:59:24   Card 1: ID=4f1f6bf6-e235-4715-acdc-029145a733ec, Type=White, Value=That’s what she said
+2025/07/27 17:59:24   Card 2: ID=93853a7c-9bb1-4f74-833e-da4f96691f9c, Type=White, Value=Pepe the Frog
+2025/07/27 17:59:24 Found card 93853a7c-9bb1-4f74-833e-da4f96691f9c in player's deck
+2025/07/27 18:00:37 The App is running in development env
+2025/07/27 18:00:37 ✅ Redis connected successfully
+2025/07/27 18:02:05 Looking for card cafb2aa8-1782-4161-b268-f0d2eea6394e in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:02:05   Card 0: ID=d0bbaa99-a8cf-4dad-b804-9188f300e104, Type=White, Value=Kermit Sipping Tea
+2025/07/27 18:02:05   Card 1: ID=6dc38232-b037-483a-89dd-7d5399b8083a, Type=White, Value=It’s a Trap!
+2025/07/27 18:02:05   Card 2: ID=cafb2aa8-1782-4161-b268-f0d2eea6394e, Type=White, Value=Spongebob's 'Mocking' Face
+2025/07/27 18:02:05 Found card cafb2aa8-1782-4161-b268-f0d2eea6394e in player's deck
+2025/07/27 18:02:05 Looking for card cafb2aa8-1782-4161-b268-f0d2eea6394e in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:02:05   Card 0: ID=d0bbaa99-a8cf-4dad-b804-9188f300e104, Type=White, Value=Kermit Sipping Tea
+2025/07/27 18:02:05   Card 1: ID=6dc38232-b037-483a-89dd-7d5399b8083a, Type=White, Value=It’s a Trap!
+2025/07/27 18:02:05   Card 2: ID=cafb2aa8-1782-4161-b268-f0d2eea6394e, Type=White, Value=Spongebob's 'Mocking' Face
+2025/07/27 18:02:05 Found card cafb2aa8-1782-4161-b268-f0d2eea6394e in player's deck
+2025/07/27 18:02:07 Looking for card cafb2aa8-1782-4161-b268-f0d2eea6394e in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:02:07   Card 0: ID=d0bbaa99-a8cf-4dad-b804-9188f300e104, Type=White, Value=Kermit Sipping Tea
+2025/07/27 18:02:07   Card 1: ID=6dc38232-b037-483a-89dd-7d5399b8083a, Type=White, Value=It’s a Trap!
+2025/07/27 18:02:07   Card 2: ID=cafb2aa8-1782-4161-b268-f0d2eea6394e, Type=White, Value=Spongebob's 'Mocking' Face
+2025/07/27 18:02:07 Found card cafb2aa8-1782-4161-b268-f0d2eea6394e in player's deck
+2025/07/27 18:02:56 The App is running in development env
+2025/07/27 18:02:57 ✅ Redis connected successfully
+2025/07/27 18:03:59 Looking for card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:03:59   Card 0: ID=379d732c-b910-46ad-9cea-720da0efc753, Type=White, Value=We were on a break!
+2025/07/27 18:03:59   Card 1: ID=1b205918-ae28-46c6-9b5c-276bf91bd8d7, Type=White, Value=Just one more meme
+2025/07/27 18:03:59   Card 2: ID=e8640948-4547-4440-91df-97610b11632c, Type=White, Value=Doge
+2025/07/27 18:03:59   Card 3: ID=60fca20d-fb98-4aac-8f9c-71633a5238cd, Type=White, Value=That’s a spicy meme!
+2025/07/27 18:03:59 Found card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player's deck
+2025/07/27 18:03:59 Looking for card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:03:59   Card 0: ID=379d732c-b910-46ad-9cea-720da0efc753, Type=White, Value=We were on a break!
+2025/07/27 18:03:59   Card 1: ID=1b205918-ae28-46c6-9b5c-276bf91bd8d7, Type=White, Value=Just one more meme
+2025/07/27 18:03:59   Card 2: ID=e8640948-4547-4440-91df-97610b11632c, Type=White, Value=Doge
+2025/07/27 18:03:59   Card 3: ID=60fca20d-fb98-4aac-8f9c-71633a5238cd, Type=White, Value=That’s a spicy meme!
+2025/07/27 18:03:59 Found card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player's deck
+2025/07/27 18:04:05 Looking for card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player 113878096167703176805 deck (has 7 cards)
+2025/07/27 18:04:05   Card 0: ID=379d732c-b910-46ad-9cea-720da0efc753, Type=White, Value=We were on a break!
+2025/07/27 18:04:05   Card 1: ID=1b205918-ae28-46c6-9b5c-276bf91bd8d7, Type=White, Value=Just one more meme
+2025/07/27 18:04:05   Card 2: ID=e8640948-4547-4440-91df-97610b11632c, Type=White, Value=Doge
+2025/07/27 18:04:05   Card 3: ID=60fca20d-fb98-4aac-8f9c-71633a5238cd, Type=White, Value=That’s a spicy meme!
+2025/07/27 18:04:05 Found card 60fca20d-fb98-4aac-8f9c-71633a5238cd in player's deck
+2025/07/27 18:11:15 The App is running in development env
+2025/07/27 18:11:16 ✅ Redis connected successfully
+2025/07/27 18:14:53 The App is running in development env
+2025/07/27 18:14:53 ✅ Redis connected successfully
+2025/07/27 18:19:24 The App is running in development env
+2025/07/27 18:19:25 ✅ Redis connected successfully
+2025/07/27 18:22:17 The App is running in development env
+2025/07/27 18:22:18 ✅ Redis connected successfully
+2025/07/27 18:26:45 The App is running in development env
+2025/07/27 18:26:46 ✅ Redis connected successfully

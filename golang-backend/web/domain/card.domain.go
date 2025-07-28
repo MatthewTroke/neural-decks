@@ -8,7 +8,19 @@ const (
 )
 
 type Card struct {
-	ID        string
-	Type      CardType
-	CardValue string
+	ID        string   `json:"id"`
+	Type      CardType `json:"type"`
+	CardValue string   `json:"card_value"`
+}
+
+// Clone creates a copy of the card
+func (c *Card) Clone() *Card {
+	if c == nil {
+		return nil
+	}
+	return &Card{
+		ID:        c.ID,
+		Type:      c.Type,
+		CardValue: c.CardValue,
+	}
 }

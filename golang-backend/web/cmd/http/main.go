@@ -50,7 +50,7 @@ func main() {
 
 	fiberApp.Use(cors.New(CorsConfig))
 
-	route.Setup(env, app.Postgres, fiberApp)
+	route.Setup(env, app.Postgres, fiberApp, app.Redis)
 
 	fiberApp.Listen(":8080")
 }

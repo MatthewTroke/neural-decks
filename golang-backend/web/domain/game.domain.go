@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	"gorm.io/gorm"
 )
 
@@ -55,25 +57,167 @@ const (
 	Finished   GameStatus = "Finished"
 )
 
+// Event sourcing types for game state changes
+type GameEventType string
+
+const (
+	EventGameBegins               GameEventType = "GameBegins"
+	EventJoinedGame               GameEventType = "JoinedGame"
+	EventCardPlayed               GameEventType = "CardPlayed"
+	EventRoundContinued           GameEventType = "RoundContinued"
+	EventCardCzarChoseWinningCard GameEventType = "CardCzarChoseWinningCard"
+	EventShuffle                  GameEventType = "Shuffle"
+	EventDealCards                GameEventType = "DealCards"
+	EventDrawBlackCard            GameEventType = "DrawBlackCard"
+	EventSetCardCzar              GameEventType = "SetCardCzar"
+)
+
+type GameEventPayloadCardCzarChoseWinningCard struct {
+	GameID string `json:"game_id"`
+	CardID string `json:"card_id"`
+}
+
+func NewGameEventPayloadCardCzarChoseWinningCard(gameID string, cardID string) GameEventPayloadCardCzarChoseWinningCard {
+	return GameEventPayloadCardCzarChoseWinningCard{
+		GameID: gameID,
+		CardID: cardID,
+	}
+}
+
+type GameEventPayloadGameBegins struct {
+	GameID string `json:"game_id"`
+	UserID string `json:"user_id"`
+}
+
+func NewGameEventPayloadGameBegins(gameID string, userID string) GameEventPayloadGameBegins {
+	return GameEventPayloadGameBegins{
+		GameID: gameID,
+		UserID: userID,
+	}
+}
+
+type GameEventPayloadJoinedGame struct {
+	GameID string       `json:"game_id"`
+	UserID string       `json:"user_id"`
+	Claim  *CustomClaim `json:"claim"`
+}
+
+func NewGameEventPayloadJoinedGame(gameID string, userID string, claim *CustomClaim) GameEventPayloadJoinedGame {
+	return GameEventPayloadJoinedGame{
+		GameID: gameID,
+		UserID: userID,
+		Claim:  claim,
+	}
+}
+
+type GameEventPayloadGameRoundContinued struct {
+	GameID string `json:"game_id"`
+	UserID string `json:"user_id"`
+}
+
+func NewGameEventPayloadGameRoundContinued(gameID string, userID string) GameEventPayloadGameRoundContinued {
+	return GameEventPayloadGameRoundContinued{
+		GameID: gameID,
+		UserID: userID,
+	}
+}
+
+type GameEventPayloadPlayCard struct {
+	GameID string       `json:"game_id"`
+	CardID string       `json:"card_id"`
+	Claim  *CustomClaim `json:"claim"`
+}
+
+func NewGameEventPayloadPlayCard(gameID string, cardID string, claim *CustomClaim) GameEventPayloadPlayCard {
+	return GameEventPayloadPlayCard{
+		GameID: gameID,
+		CardID: cardID,
+		Claim:  claim,
+	}
+}
+
+type GameEventPayloadShuffle struct {
+	GameID    string `json:"game_id"`
+	Seed      int64  `json:"seed"`
+	ShuffleID string `json:"shuffle_id"`
+}
+
+func NewGameEventPayloadShuffle(gameID string, seed int64, shuffleID string) GameEventPayloadShuffle {
+	return GameEventPayloadShuffle{
+		GameID:    gameID,
+		Seed:      seed,
+		ShuffleID: shuffleID,
+	}
+}
+
+type GameEventPayloadDealCards struct {
+	GameID   string   `json:"game_id"`
+	PlayerID string   `json:"player_id"`
+	CardIDs  []string `json:"card_ids"`
+}
+
+func NewGameEventPayloadDealCards(gameID string, playerID string, cardIDs []string) GameEventPayloadDealCards {
+	return GameEventPayloadDealCards{
+		GameID:   gameID,
+		PlayerID: playerID,
+		CardIDs:  cardIDs,
+	}
+}
+
+type GameEventPayloadDrawBlackCard struct {
+	GameID string `json:"game_id"`
+	CardID string `json:"card_id"`
+}
+
+func NewGameEventPayloadDrawBlackCard(gameID string, cardID string) GameEventPayloadDrawBlackCard {
+	return GameEventPayloadDrawBlackCard{
+		GameID: gameID,
+		CardID: cardID,
+	}
+}
+
+type GameEventPayloadSetCardCzar struct {
+	GameID   string `json:"game_id"`
+	PlayerID string `json:"player_id"`
+}
+
+func NewGameEventPayloadSetCardCzar(gameID string, playerID string) GameEventPayloadSetCardCzar {
+	return GameEventPayloadSetCardCzar{
+		GameID:   gameID,
+		PlayerID: playerID,
+	}
+}
+
+// GameEvent represents a single event in the game event stream
+// Payload contains event-specific data, marshaled as JSON
+// ID should be unique (e.g., UUID)
+type GameEvent struct {
+	ID        string          `json:"id"`
+	GameID    string          `json:"game_id"`
+	Type      GameEventType   `json:"type"`
+	Payload   json.RawMessage `json:"payload"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
 type Game struct {
-	Mutex            sync.RWMutex
-	ID               string
-	Name             string
-	Collection       *Collection
-	WinnerCount      int
-	MaxPlayerCount   int
-	Status           GameStatus
-	Players          []*Player
-	WhiteCards       []*Card
-	BlackCard        *Card
-	RoundStatus      RoundStatus
-	CurrentGameRound int
-	RoundWinner      *Player
-	LastVacatedAt    *time.Time
-	Vacated          bool
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	DeletedAt        gorm.DeletedAt
+	Mutex            sync.RWMutex   `json:"-"`
+	ID               string         `json:"id"`
+	Name             string         `json:"name"`
+	Collection       *Collection    `json:"collection"`
+	WinnerCount      int            `json:"winner_count"`
+	MaxPlayerCount   int            `json:"max_player_count"`
+	Status           GameStatus     `json:"status"`
+	Players          []*Player      `json:"players"`
+	WhiteCards       []*Card        `json:"white_cards"`
+	BlackCard        *Card          `json:"black_card"`
+	RoundStatus      RoundStatus    `json:"round_status"`
+	CurrentGameRound int            `json:"current_game_round"`
+	RoundWinner      *Player        `json:"round_winner"`
+	LastVacatedAt    *time.Time     `json:"last_vacated_at"`
+	Vacated          bool           `json:"vacated"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `json:"-"`
 }
 
 func (g *Game) Lock() {
@@ -202,6 +346,7 @@ func (g *Game) PickNewCardCzar() error {
 	return nil
 }
 
+// THERE IS A BUG HERE. THIS SHOULD BE FIND PLAYER BY USER ID AND GAME ID.
 func (g *Game) FindPlayerByUserId(userId string) (*Player, error) {
 	if g.Players == nil {
 		return nil, fmt.Errorf("could not find player by user id, players are nil")
@@ -228,7 +373,7 @@ func (g *Game) FindCardByPlayerId(playerId string, cardId string) (*Card, error)
 	player, err := g.FindPlayerByUserId(playerId)
 
 	if err != nil {
-		log.Println("could not find card by player id: %w", err)
+		log.Printf("could not find card by player id: %v", err)
 		return nil, err
 	}
 
@@ -242,12 +387,16 @@ func (g *Game) FindCardByPlayerId(playerId string, cardId string) (*Card, error)
 }
 
 func (g *Game) FindWhiteCardByCardId(cardId string) (*Card, error) {
-	for _, card := range g.WhiteCards {
+	fmt.Printf("FindWhiteCardByCardId: Looking for card %s in %d white cards\n", cardId, len(g.WhiteCards))
+	for i, card := range g.WhiteCards {
+		fmt.Printf("  White card %d: ID=%s, Type=%s, Value=%s\n", i, card.ID, card.Type, card.CardValue)
 		if card.ID == cardId {
+			fmt.Printf("Found white card %s\n", cardId)
 			return card, nil
 		}
 	}
 
+	fmt.Printf("Card %s not found in white cards\n", cardId)
 	return nil, fmt.Errorf("card not found in cards")
 }
 
@@ -295,4 +444,262 @@ func (g *Game) FindWhiteCardOwner(card *Card) (*Player, error) {
 	}
 
 	return nil, fmt.Errorf("could not find white card owner")
+}
+
+func (g *Game) Clone() *Game {
+	g.Lock()
+	defer g.Unlock()
+
+	cloned := &Game{
+		ID:               g.ID,
+		Name:             g.Name,
+		WinnerCount:      g.WinnerCount,
+		MaxPlayerCount:   g.MaxPlayerCount,
+		Status:           g.Status,
+		RoundStatus:      g.RoundStatus,
+		CurrentGameRound: g.CurrentGameRound,
+		Vacated:          g.Vacated,
+		CreatedAt:        g.CreatedAt,
+		UpdatedAt:        g.UpdatedAt,
+		DeletedAt:        g.DeletedAt,
+	}
+
+	// Clone collection
+	if g.Collection != nil {
+		cloned.Collection = g.Collection.Clone()
+	}
+
+	// Clone players
+	if g.Players != nil {
+		cloned.Players = make([]*Player, len(g.Players))
+		for i, player := range g.Players {
+			cloned.Players[i] = player.Clone()
+		}
+	}
+
+	// Clone white cards
+	if g.WhiteCards != nil {
+		cloned.WhiteCards = make([]*Card, len(g.WhiteCards))
+		for i, card := range g.WhiteCards {
+			cloned.WhiteCards[i] = card.Clone()
+		}
+	}
+
+	// Clone black card
+	if g.BlackCard != nil {
+		cloned.BlackCard = g.BlackCard.Clone()
+	}
+
+	// Clone round winner
+	if g.RoundWinner != nil {
+		cloned.RoundWinner = g.RoundWinner.Clone()
+	}
+
+	// Clone last vacated time
+	if g.LastVacatedAt != nil {
+		lastVacated := *g.LastVacatedAt
+		cloned.LastVacatedAt = &lastVacated
+	}
+
+	return cloned
+}
+
+func (g *Game) ApplyEvent(event GameEvent) error {
+	g.Lock()
+	defer g.Unlock()
+
+	fmt.Printf("Applying event: %s (GameID: %s)\n", event.Type, event.GameID)
+
+	switch event.Type {
+	case EventGameBegins:
+		var payload GameEventPayloadGameBegins
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventGameBegins payload: %w", err)
+		}
+
+		g.SetRoundStatus(PlayersPickingCard)
+		g.SetStatus(InProgress)
+	case EventShuffle:
+		var payload GameEventPayloadShuffle
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventShuffle payload: %w", err)
+		}
+
+		// Use the stored seed for deterministic shuffling
+		g.Collection.ShuffleWithSeed(payload.Seed)
+	case EventDealCards:
+		var payload GameEventPayloadDealCards
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventDealCards payload: %w", err)
+		}
+
+		// Find the player and give them the specific cards
+		for _, player := range g.Players {
+			if player.UserID == payload.PlayerID {
+				// Clear existing deck and add the specific cards
+				player.Deck = []*Card{}
+				for _, cardID := range payload.CardIDs {
+					card := g.Collection.FindCardByID(cardID)
+					if card != nil {
+						player.Deck = append(player.Deck, card)
+					}
+				}
+				break
+			}
+		}
+	case EventDrawBlackCard:
+		var payload GameEventPayloadDrawBlackCard
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventDrawBlackCard payload: %w", err)
+		}
+
+		// Set the specific black card that was drawn
+		card := g.Collection.FindCardByID(payload.CardID)
+		if card != nil {
+			g.BlackCard = card
+		}
+	case EventSetCardCzar:
+		var payload GameEventPayloadSetCardCzar
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventSetCardCzar payload: %w", err)
+		}
+
+		// Find the player and set them as card czar
+		for _, player := range g.Players {
+			if player.UserID == payload.PlayerID {
+				// Remove card czar from all players first
+				for _, p := range g.Players {
+					p.SetIsCardCzar(false)
+				}
+				// Set this player as card czar
+				player.SetIsCardCzar(true)
+				break
+			}
+		}
+	case EventJoinedGame:
+		var payload GameEventPayloadJoinedGame
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventGameBegins payload: %w", err)
+		}
+
+		player := NewPlayer(payload.Claim)
+
+		if g.Players == nil {
+			return fmt.Errorf("could not join game ID %s, game players is nil", payload.GameID)
+		}
+
+		g.Players = append(g.Players, player)
+	case EventRoundContinued:
+		var payload GameEventPayloadGameRoundContinued
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventGameBegins payload: %w", err)
+		}
+
+		for _, player := range g.Players {
+			if player.IsCardCzar {
+				continue
+			}
+
+			player.RemovePlacedCard()
+			player.Deck = append(player.Deck, g.Collection.DrawCards(1, White)...)
+		}
+
+		// game.RemovePlacedCards()
+		// game.DrawWhiteCardsFromAllPlayersWhoPlayed()
+
+		currentCardCzar, err := g.FindCurrentCardCzar()
+
+		if err != nil {
+			return fmt.Errorf("could not continue round: %w", err)
+		}
+
+		currentCardCzar.SetIsCardCzar(false)
+		currentCardCzar.SetWasCardCzar(true)
+
+		g.SetRoundWinner(nil)
+		g.ClearBoard()
+
+		err = g.PickNewCardCzar()
+
+		if err != nil {
+			return fmt.Errorf("could not pick new card czar: %w", err)
+		}
+
+		err = g.PickNewBlackCard()
+
+		if err != nil {
+			return fmt.Errorf("could not pick new black card: %w", err)
+		}
+
+		g.IncrementGameRound()
+		g.SetRoundStatus(PlayersPickingCard)
+
+	case EventCardCzarChoseWinningCard:
+		var payload GameEventPayloadCardCzarChoseWinningCard
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventCardCzarChoseWinningCard payload: %w", err)
+		}
+		winningCard, _ := g.FindWhiteCardByCardId(payload.CardID)
+		winner, _ := g.FindWhiteCardOwner(winningCard)
+
+		winner.IncrementScore()
+		g.SetRoundStatus(CardCzarChoseWinningCard)
+		g.SetRoundWinner(winner)
+
+	case EventCardPlayed:
+		var payload GameEventPayloadPlayCard
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventCardPlayed payload: %w", err)
+		}
+
+		fmt.Printf("EventCardPlayed: UserID=%s, CardID=%s\n", payload.Claim.UserID, payload.CardID)
+
+		player, _ := g.FindPlayerByUserId(payload.Claim.UserID)
+		card, _ := g.FindCardByPlayerId(payload.Claim.UserID, payload.CardID)
+
+		fmt.Printf("Found player: %s, Found card: %s\n", player.UserID, card.ID)
+
+		err := player.RemoveCardFromDeck(card.ID)
+
+		if err != nil {
+			return fmt.Errorf("unable to play white card: %w", err)
+		}
+
+		err = player.SetCardAsPlacedCard(card)
+
+		if err != nil {
+			return fmt.Errorf("unable to play white card: %w", err)
+		}
+
+		err = g.AddWhiteCardToGameBoard(card)
+
+		if err != nil {
+			return fmt.Errorf("unable to play white card: %w", err)
+		}
+
+		fmt.Printf("Added card to game board. WhiteCards count: %d\n", len(g.WhiteCards))
+
+		hasPlayersPlayedWhiteCard, err := g.HasAllPlayersPlayedWhiteCard()
+
+		if err != nil {
+			return fmt.Errorf("unable to play white card: %w", err)
+		}
+
+		if hasPlayersPlayedWhiteCard {
+			g.SetRoundStatus(CardCzarPickingWinningCard)
+		}
+	default:
+		return fmt.Errorf("unknown event type: %s", event.Type)
+	}
+
+	return nil
 }

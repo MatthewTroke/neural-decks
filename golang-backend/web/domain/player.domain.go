@@ -12,17 +12,17 @@ const (
 )
 
 type Player struct {
-	Score         int
-	Role          PlayerRole
-	UserID        string
-	Name          string
-	Image         string
-	Deck          []*Card
-	IsCardCzar    bool
-	WasCardCzar   bool
-	PlacedCard    *Card
-	IsRoundWinner bool
-	IsGameWinner  bool
+	Score         int        `json:"score"`
+	Role          PlayerRole `json:"role"`
+	UserID        string     `json:"user_id"`
+	Name          string     `json:"name"`
+	Image         string     `json:"image"`
+	Deck          []*Card    `json:"deck"`
+	IsCardCzar    bool       `json:"is_card_czar"`
+	WasCardCzar   bool       `json:"was_card_czar"`
+	PlacedCard    *Card      `json:"placed_card"`
+	IsRoundWinner bool       `json:"is_round_winner"`
+	IsGameWinner  bool       `json:"is_game_winner"`
 }
 
 func NewPlayer(claim *CustomClaim) *Player {
@@ -108,4 +108,38 @@ func (p *Player) HasPlayedCard(card *Card) (bool, error) {
 
 func (p *Player) IncrementScore() {
 	p.Score++
+}
+
+// Clone creates a deep copy of the player
+func (p *Player) Clone() *Player {
+	if p == nil {
+		return nil
+	}
+
+	cloned := &Player{
+		Score:         p.Score,
+		Role:          p.Role,
+		UserID:        p.UserID,
+		Name:          p.Name,
+		Image:         p.Image,
+		IsCardCzar:    p.IsCardCzar,
+		WasCardCzar:   p.WasCardCzar,
+		IsRoundWinner: p.IsRoundWinner,
+		IsGameWinner:  p.IsGameWinner,
+	}
+
+	// Clone deck
+	if p.Deck != nil {
+		cloned.Deck = make([]*Card, len(p.Deck))
+		for i, card := range p.Deck {
+			cloned.Deck[i] = card.Clone()
+		}
+	}
+
+	// Clone placed card
+	if p.PlacedCard != nil {
+		cloned.PlacedCard = p.PlacedCard.Clone()
+	}
+
+	return cloned
 }

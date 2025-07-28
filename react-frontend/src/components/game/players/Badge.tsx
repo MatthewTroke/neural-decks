@@ -8,11 +8,11 @@ interface PlayerBadgeProps {
 }
 
 export default function PlayerBadge(props: PlayerBadgeProps) {
-  if (props.game.Status === "Setup") {
+  if (props.game.status === "Setup") {
     return null;
   }
 
-  if (props.player?.UserID === props.game?.RoundWinner?.UserID) {
+  if (props.player?.user_id === props.game?.round_winner?.user_id) {
     return (
       <div>
         <Badge variant="outline" className="text-xs">
@@ -23,7 +23,7 @@ export default function PlayerBadge(props: PlayerBadgeProps) {
     );
   }
 
-  if (!props.player.IsCardCzar && !props.player.PlacedCard) {
+  if (!props.player.is_card_czar && !props.player.placed_card) {
     return (
       <div>
         <Badge
@@ -40,7 +40,7 @@ export default function PlayerBadge(props: PlayerBadgeProps) {
     );
   }
 
-  if (props.player.IsCardCzar) {
+  if (props.player.is_card_czar) {
     return (
       <div>
         <Badge variant="default" className={cn("text-xs animate-pulse")}>

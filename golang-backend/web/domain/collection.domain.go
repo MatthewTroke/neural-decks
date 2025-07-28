@@ -6,7 +6,7 @@ import (
 )
 
 type Collection struct {
-	Cards []*Card
+	Cards []*Card `json:"cards"`
 }
 
 func NewCollection() *Collection {
@@ -32,6 +32,26 @@ func (c *Collection) Shuffle() {
 	}
 }
 
+func (c *Collection) ShuffleWithSeed(seed int64) {
+	rand.Seed(seed)
+
+	n := len(c.Cards)
+
+	for i := n - 1; i > 0; i-- {
+		j := rand.Intn(i + 1)
+		c.Cards[i], c.Cards[j] = c.Cards[j], c.Cards[i]
+	}
+}
+
+func (c *Collection) FindCardByID(cardID string) *Card {
+	for _, card := range c.Cards {
+		if card.ID == cardID {
+			return card
+		}
+	}
+	return nil
+}
+
 func (c *Collection) DrawCards(n int, cardType CardType) []*Card {
 	var drawnCards []*Card
 	var remainingCards []*Card
@@ -50,4 +70,22 @@ func (c *Collection) DrawCards(n int, cardType CardType) []*Card {
 	c.Cards = remainingCards
 
 	return drawnCards
+}
+
+// Clone creates a deep copy of the collection
+func (c *Collection) Clone() *Collection {
+	if c == nil {
+		return nil
+	}
+
+	cloned := &Collection{}
+
+	if c.Cards != nil {
+		cloned.Cards = make([]*Card, len(c.Cards))
+		for i, card := range c.Cards {
+			cloned.Cards[i] = card.Clone()
+		}
+	}
+
+	return cloned
 }

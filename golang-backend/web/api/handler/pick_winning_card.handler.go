@@ -2,6 +2,8 @@ package handler
 
 import (
 	"cardgame/domain"
+	"cardgame/request"
+	"cardgame/services"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,10 +15,11 @@ type PickWinningCardPayload struct {
 }
 
 type PickWinningCardHandler struct {
-	Payload PickWinningCardPayload
-	GameSvc domain.GameService
-	Claim   *domain.CustomClaim
-	Hub     *domain.Hub
+	Payload          request.GameEventPayloadCardCzarChoseWinningCardRequest
+	EventService     *services.EventService
+	GameStateService *services.GameStateService
+	Claim            *domain.CustomClaim
+	Hub              *domain.Hub
 }
 
 type InvalidUserActionError struct {
@@ -32,17 +35,18 @@ func (e *InvalidUserActionError) Error() string {
 	return e.Message
 }
 
-func NewPickWinningCardHandler(payload PickWinningCardPayload, gameSvc domain.GameService, claim *domain.CustomClaim, hub *domain.Hub) *PickWinningCardHandler {
+func NewPickWinningCardHandler(payload request.GameEventPayloadCardCzarChoseWinningCardRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *PickWinningCardHandler {
 	return &PickWinningCardHandler{
-		Payload: payload,
-		GameSvc: gameSvc,
-		Claim:   claim,
-		Hub:     hub,
+		Payload:          payload,
+		EventService:     eventService,
+		GameStateService: gameStateService,
+		Claim:            claim,
+		Hub:              hub,
 	}
 }
 
 func (h *PickWinningCardHandler) Validate() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
@@ -99,20 +103,33 @@ func (h *PickWinningCardHandler) Validate() error {
 }
 
 func (h *PickWinningCardHandler) Handle() error {
-	game, err := h.GameSvc.GetGameById(h.Payload.GameID)
-
-	winningCard, _ := game.FindWhiteCardByCardId(h.Payload.CardID)
-	winner, _ := game.FindWhiteCardOwner(winningCard)
-
-	winner.IncrementScore()
-	game.SetRoundStatus(domain.CardCzarChoseWinningCard)
-	game.SetRoundWinner(winner)
+	game, err := h.EventService.GetGameById(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event, unable to choose white card winner: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
 	}
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+	event, err := h.EventService.CreateGameEvent(
+		h.Payload.GameID,
+		domain.EventCardCzarChoseWinningCard,
+		domain.NewGameEventPayloadCardCzarChoseWinningCard(h.Payload.GameID, h.Payload.CardID),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create event: %w", err)
+	}
+
+	newGame := game.Clone()
+
+	if err := newGame.ApplyEvent(event); err != nil {
+		return fmt.Errorf("failed to apply event: %w", err)
+	}
+
+	if err := h.EventService.AppendEvent(event); err != nil {
+		return fmt.Errorf("failed to persist event: %w", err)
+	}
+
+	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
 
 	jsonMessage, err := json.Marshal(message)
 

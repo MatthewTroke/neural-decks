@@ -148,7 +148,7 @@ export default function GameComponent() {
         </div>
       </div>
 
-      <div className="relative flex justify-center md:min-h-[36rem] container mx-auto p-6">
+      <div className="relative flex justify-center md:min-h-[32rem] container mx-auto p-6">
         {/* Player's hand */}
         <PlayerHand game={game} handlePlayCard={handlePlayCard} />
       </div>

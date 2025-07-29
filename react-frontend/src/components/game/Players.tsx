@@ -1,10 +1,11 @@
 import PlayerBadge from "@/components/game/players/Badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
-import { Users } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ChevronDown, ChevronUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Card, CardContent, CardHeader } from "../ui/card";
+import { GameButtons } from "./GameBoardButtons";
 
 export default function Players(props: {
   game: Game;
@@ -12,7 +13,13 @@ export default function Players(props: {
   handleBeginGame: () => void;
   handleContinueRound: () => void;
 }) {
+  const isMobile = useIsMobile();
+  const [expanded, setExpanded] = useState(true);
   const [showAnimation, setShowAnimation] = useState(false);
+
+  useEffect(() => {
+    setExpanded(!isMobile);
+  }, [isMobile]);
 
   // Reset animation when a new winner is chosen
   useEffect(() => {
@@ -34,122 +41,51 @@ export default function Players(props: {
   }, [props.game.players]);
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div className="flex justify-between items-start">
-        <JoinGameButton
-          game={props.game}
-          handleJoinGame={props.handleJoinGame}
-        />
-        <BeginGameButton
-          game={props.game}
-          handleBeginGame={props.handleBeginGame}
-        />
-        <ContinueRoundButton
-          game={props.game}
-          handleContinueRound={props.handleContinueRound}
-        />
-      </div>
+    <div className="flex flex-col w-full">
+      <GameButtons
+        game={props.game}
+        handleBeginGame={props.handleBeginGame}
+        handleContinueRound={props.handleContinueRound}
+        handleJoinGame={props.handleJoinGame}
+      />
 
-      <Card variant="ghost" className="w-full">
-        <CardHeader>
+      <Card className="w-full">
+        <CardHeader className="flex flex-row justify-between">
           <h2 className="text-lg font-medium flex items-center gap-2">
             <Users className="h-5 w-5" /> Players
           </h2>
+
+          <Button
+            variant="ghost"
+            title={expanded ? "Expand Players" : "Collapse Players"}
+            onClick={() => setExpanded((expanded) => !expanded)}
+          >
+            {expanded ? <ChevronDown /> : <ChevronUp />}
+          </Button>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {props.game.players.map((player) => (
-              <div
-                key={player.user_id}
-                className="flex justify-between items-center"
-              >
-                <div className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarImage alt={player.name} />
-                    <AvatarFallback>{player.name.at(0)}</AvatarFallback>
-                  </Avatar>
-                  <span>{player.name}</span>
-                  <PlayerBadge player={player} game={props.game} />
+        {expanded && (
+          <CardContent>
+            <div className="space-y-2">
+              {props.game.players.map((player) => (
+                <div
+                  key={player.user_id}
+                  className="flex justify-between items-center"
+                >
+                  <div className="flex items-center gap-2">
+                    <Avatar>
+                      <AvatarImage alt={player.name} />
+                      <AvatarFallback>{player.name.at(0)}</AvatarFallback>
+                    </Avatar>
+                    <span>{player.name}</span>
+                    <PlayerBadge player={player} game={props.game} />
+                  </div>
+                  <span>{player.score} pts</span>
                 </div>
-                <span>{player.score} pts</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
+              ))}
+            </div>
+          </CardContent>
+        )}
       </Card>
     </div>
-  );
-}
-
-interface ContinueRoundButtonProps {
-  game: Game;
-  handleContinueRound: () => void;
-}
-
-function ContinueRoundButton(props: ContinueRoundButtonProps) {
-  const isGameInProgress = props.game.status === "InProgress";
-  const isGameRoundOver =
-    props.game.round_status === "CardCzarChoseWinningCard";
-
-  const shouldRenderContinueRoundButton = isGameInProgress && isGameRoundOver;
-
-  if (!shouldRenderContinueRoundButton) {
-    return null;
-  }
-
-  return (
-    <Button onClick={props.handleContinueRound} variant="secondary" size="sm">
-      Continue round
-    </Button>
-  );
-}
-
-interface JoinGameButtonProps {
-  game: Game;
-  handleJoinGame: () => void;
-}
-
-function JoinGameButton(props: JoinGameButtonProps) {
-  const { user } = useAuth();
-
-  const isUserInGame = props.game.players.some(
-    (player: Player) => player.user_id === user?.user_id
-  );
-  const shouldRenderJoinGameButton = !isUserInGame;
-
-  if (!shouldRenderJoinGameButton) {
-    return null;
-  }
-
-  return (
-    <Button
-      onClick={() => props.handleJoinGame()}
-      variant="secondary"
-      size="sm"
-    >
-      Join game
-    </Button>
-  );
-}
-
-interface BeginGameButtonProps {
-  game: Game;
-  handleBeginGame: () => void;
-}
-
-function BeginGameButton(props: BeginGameButtonProps) {
-  const isGameReadyToBegin = props.game.players.length > 1;
-  const isGameInSetupState = props.game.status === "Setup";
-
-  const shouldRenderBeginGameButton = isGameReadyToBegin && isGameInSetupState;
-
-  if (!shouldRenderBeginGameButton) {
-    return null;
-  }
-
-  return (
-    <Button onClick={props.handleBeginGame} variant="secondary" size="sm">
-      Begin game
-    </Button>
   );
 }

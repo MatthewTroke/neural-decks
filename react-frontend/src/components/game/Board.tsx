@@ -50,7 +50,7 @@ export default function Board(props: {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-start gap-2">
+    <div className="flex flex-col md:flex-row items-start gap-2 flex-wrap">
       <RenderBlackCard card={props.game.black_card} />
       {props.game.white_cards.map((card) => (
         <GameCard

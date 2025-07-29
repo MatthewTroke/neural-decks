@@ -40,9 +40,9 @@ export default function GameCard(props: CardProps) {
       className={cn(
         "w-full text-start md:aspect-[3/4] md:w-36 md:h-48 flex md:items-start p-3 transition-all relative",
         !isDisabled && "cursor-pointer hover:ring-2 hover:ring-primary",
-        isDisabled && "cursor-not-allowed opacity-70",
+        isDisabled && "cursor-not-allowed",
         isBlack
-          ? "bg-black text-white"
+          ? "bg-card text-card-foreground border-2 border-primary min-h-24"
           : "bg-white text-black border-2 border-black",
         isWinningCard ? "bg-primary text-white" : "",
         {

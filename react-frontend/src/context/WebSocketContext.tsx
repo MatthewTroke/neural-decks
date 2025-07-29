@@ -1,5 +1,6 @@
 import { createContext, useContext, ReactNode } from 'react';
 import useWebSocket from 'react-use-websocket';
+import { getWebSocketUrl } from '@/lib/websocket';
 
 interface WebSocketContextType {
   sendJsonMessage: (message: any) => void;
@@ -21,7 +22,7 @@ interface WebSocketProviderProps {
 export function WebSocketProvider({ children, gameId, onMessage }: WebSocketProviderProps) {
   console.log('WebSocketProvider: Connecting to game', gameId);
   
-  const ws = useWebSocket(`ws://localhost:8080/ws/game/${gameId}`, {
+  const ws = useWebSocket(getWebSocketUrl(`/ws/game/${gameId}`), {
     onMessage: (event) => {
       console.log('WebSocket received message:', event.data);
       console.log('Event data type:', typeof event.data);

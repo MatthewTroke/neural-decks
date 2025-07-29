@@ -24,7 +24,7 @@ import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/axios";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -66,16 +66,12 @@ export function CreateGameDialog() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      return axios.post(
-        "http://localhost:8080/games/new",
-        {
-          name: form.getValues("name"),
-          subject: form.getValues("subject"),
-          max_player_count: form.getValues("max_player_count"),
-          winner_count: form.getValues("winner_count"),
-        },
-        { withCredentials: true }
-      );
+      return api.post("/games/new", {
+        name: form.getValues("name"),
+        subject: form.getValues("subject"),
+        max_player_count: form.getValues("max_player_count"),
+        winner_count: form.getValues("winner_count"),
+      });
     },
     onSuccess: () => {
       setOpen(false);

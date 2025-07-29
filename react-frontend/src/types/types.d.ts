@@ -12,6 +12,8 @@ interface User {
   name: string;
   email: string;
   user_id: string;
+  image?: string; // Optional image field from JWT
+  email_verified?: boolean; // Optional email verification status
   iss: string;
   sub: string;
   aud: string[];

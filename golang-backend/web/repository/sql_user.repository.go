@@ -19,10 +19,10 @@ func (r *SQLUserRepository) CreateUser(user *domain.User) error {
 	return r.db.Create(user).Error
 }
 
-func (r *SQLUserRepository) GetUserByID(id uint) (*domain.User, error) {
+func (r *SQLUserRepository) GetUserByID(id string) (*domain.User, error) {
 	var user domain.User
 
-	if err := r.db.First(&user, id).Error; err != nil {
+	if err := r.db.First(&user, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -72,6 +72,6 @@ func (r *SQLUserRepository) UpdateUser(user *domain.User) error {
 }
 
 // DeleteUser removes a user from the database
-func (r *SQLUserRepository) DeleteUser(id uint) error {
-	return r.db.Delete(&domain.User{}, id).Error
+func (r *SQLUserRepository) DeleteUser(id string) error {
+	return r.db.Delete(&domain.User{}, "id = ?", id).Error
 }

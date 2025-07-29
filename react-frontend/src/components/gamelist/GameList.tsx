@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/axios";
 import {
   CircleArrowRight,
   LoaderIcon,
@@ -65,11 +65,9 @@ export default function GameLobby() {
   const { data: games, isLoading } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      return axios
-        .get("http://localhost:8080/games", {
-          withCredentials: true,
-        })
-        .then((data) => data.data);
+      return api
+        .get("/games")
+        .then((response) => response.data);
     },
   });
 

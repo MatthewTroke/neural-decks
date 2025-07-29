@@ -8,10 +8,12 @@ import { useState } from "react";
 import { useParams } from "react-router";
 import useWebSocket from "react-use-websocket";
 import { SiteHeader } from "../site-header";
+import { getWebSocketUrl } from "@/lib/websocket";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Card, CardContent } from "../ui/card";
 import { Spinner } from "../ui/spinner";
 import SystemMessages from "./SystemMessages";
+import { EmojiCard } from "../ui/emoji-card";
 
 export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -42,7 +44,7 @@ export default function GameComponent() {
     lastMessage,
     getWebSocket,
     sendMessage,
-  } = useWebSocket(`ws://localhost:8080/ws/game/${gameId}`, {
+  } = useWebSocket(getWebSocketUrl(`/ws/game/${gameId}`), {
     onMessage: (event) => {
       handleIncomingWebSocketMessage(JSON.parse(event.data));
     },
@@ -148,15 +150,20 @@ export default function GameComponent() {
         </div>
       </div>
 
-      <div className="relative flex justify-center md:min-h-[32rem] container mx-auto p-6">
-        {/* Player's hand */}
-        <PlayerHand game={game} handlePlayCard={handlePlayCard} />
+      {/* Player's hand */}
+      <PlayerHand game={game} handlePlayCard={handlePlayCard} />
+
+      {/* Emoji List */}
+      <div className="mx-auto container p-6">
+        <EmojiCard />
       </div>
 
       {/* Chat */}
       <div className="mx-auto container p-6">
         <SystemMessages chatMessages={chatMessages} />
       </div>
+
+
     </>
   );
 }
@@ -200,7 +207,7 @@ function JoinGameGrid(props: { game: Game }) {
               <div className="flex flex-col items-center justify-center h-[116px] text-center">
                 <Users className="h-8 w-8 text-zinc-600 mb-2" />
                 <span className="text-sm text-zinc-500">
-                  Waiting for player...
+                  Join seat
                 </span>
               </div>
             )}

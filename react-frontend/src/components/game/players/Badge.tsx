@@ -9,7 +9,7 @@ interface PlayerBadgeProps {
 
 export default function PlayerBadge(props: PlayerBadgeProps) {
   if (props.game.status === "Setup") {
-    return null;
+    return <div></div>;
   }
 
   if (props.player?.user_id === props.game?.round_winner?.user_id) {

@@ -4,18 +4,16 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Menu, X } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/axios";
 import { Badge } from "../ui/badge";
 
 export function Navbar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.get("http://localhost:8080/auth/google", {
-        withCredentials: true,
-      });
+      const response = await api.get("/auth/google");
 
       return response.data;
     },
@@ -26,6 +24,12 @@ export function Navbar() {
       console.error("Error generating OAuth link:", error);
     },
   });
+
+  const handleLogout = async () => {
+    await logout();
+    // Redirect to login page after logout
+    window.location.href = "/login";
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-[#0f1524]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1524]/60">

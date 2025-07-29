@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -63,4 +65,10 @@ func BindAndValidate(c *fiber.Ctx, s interface{}) error {
 	}
 
 	return nil
+}
+
+// HashToken hashes a token using SHA-256 and returns the hex string
+func HashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
 }

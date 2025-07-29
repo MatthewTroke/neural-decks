@@ -31,11 +31,11 @@ func NewGameRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group f
 	}
 
 	group.Get("/ws/game/:id",
-		middleware.AuthRedirect(gc.Env),
+		middleware.RequireAuth(gc.Env, db),
 		websocket.New(gc.HandleJoinWebsocketGameRoom),
 	)
 
-	group.Get("/games", middleware.AuthRedirect(gc.Env), func(c *fiber.Ctx) error {
+	group.Get("/games", middleware.RequireAuth(gc.Env, db), func(c *fiber.Ctx) error {
 		games, err := gc.EventService.GetAllGamesWithCurrentState()
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -48,5 +48,5 @@ func NewGameRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group f
 		return c.Status(200).JSON(response)
 	})
 
-	group.Post("/games/new", middleware.AuthRedirect(gc.Env), gc.CreateGame)
+	group.Post("/games/new", middleware.RequireAuth(gc.Env, db), gc.CreateGame)
 }

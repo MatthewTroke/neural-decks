@@ -35,6 +35,88 @@ docker-compose up --build
 - **Frontend**: http://localhost:3000
 - **Backend**: http://localhost:8080
 
+## 🔐 OAuth Authentication Setup
+
+Neural Decks supports OAuth authentication with Google and Discord. You'll need to set up OAuth applications for both providers.
+
+### Google OAuth Setup
+
+1. **Create Google OAuth Application:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing one
+   - Enable the Google+ API
+   - Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client IDs"
+   - Set Application Type to "Web application"
+   - Add authorized redirect URIs:
+     - Development: `http://localhost:8080/auth/google/callback`
+     - Production: `https://yourdomain.com/auth/google/callback`
+
+2. **Get OAuth Credentials:**
+   - Copy the Client ID and Client Secret
+   - Add them to your environment variables
+
+### Discord OAuth Setup
+
+1. **Create Discord OAuth Application:**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Click "New Application"
+   - Go to "OAuth2" → "General"
+   - Add redirect URIs:
+     - Development: `http://localhost:8080/auth/discord/callback`
+     - Production: `https://yourdomain.com/auth/discord/callback`
+   - Copy the Client ID and Client Secret
+
+### Environment Variables
+
+Create a `.env` file in the `golang-backend/web` directory with the following variables:
+
+```bash
+# OAuth Configuration
+GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-client-secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8080/auth/google/callback
+
+DISCORD_OAUTH_CLIENT_ID=your-discord-client-id
+DISCORD_OAUTH_CLIENT_SECRET=your-discord-client-secret
+DISCORD_OAUTH_REDIRECT_URI=http://localhost:8080/auth/discord/callback
+
+# JWT Configuration
+JWT_VERIFY_SECRET=your-super-secret-jwt-key-at-least-32-characters
+
+# Database Configuration
+DATABASE_DSN=postgresql://postgres:password@localhost:5432/neural_decks
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# AI Configuration
+CHATGPT_API_KEY=your-openai-api-key
+
+# Application Environment
+APP_ENV=development
+```
+
+### OAuth Flow
+
+1. **User clicks "Login with Google/Discord"**
+2. **Redirected to OAuth provider** (Google/Discord)
+3. **User authorizes the application**
+4. **Callback to backend** with authorization code
+5. **Backend exchanges code for tokens**
+6. **Backend creates/updates user in database**
+7. **Backend creates JWT access and refresh tokens**
+8. **User redirected to game lobby**
+
+### Session Management
+
+- **Access Tokens**: 7-day lifetime, stored in HTTP-only cookies
+- **Refresh Tokens**: 30-day lifetime, stored in HTTP-only cookies
+- **Automatic Refresh**: Tokens are automatically refreshed when about to expire
+- **Secure Logout**: All tokens are invalidated on logout
+
 ## 🛠️ Local Development Setup
 
 If you prefer to run services locally without Docker:
@@ -57,7 +139,7 @@ go mod tidy
 
 # Set up environment variables (create .env file)
 cp .env.example .env
-# Edit .env with your database and Redis credentials
+# Edit .env with your OAuth credentials and database settings
 
 # Run the backend
 go run cmd/http/main.go
@@ -83,16 +165,22 @@ neural-decks/
 ├── golang-backend/          # Go backend API
 │   ├── web/                # Main backend code
 │   │   ├── api/           # API routes and controllers
+│   │   │   ├── controller/ # OAuth and game controllers
+│   │   │   ├── middleware/ # JWT authentication middleware
+│   │   │   └── route/     # API route definitions
 │   │   ├── bootstrap/     # Application initialization
 │   │   ├── cmd/http/      # Main entry point
+│   │   ├── config/        # OAuth configuration
 │   │   ├── domain/        # Data models and business logic
 │   │   ├── repository/    # Database access layer
-│   │   └── services/      # Business logic services
+│   │   └── services/      # JWT and business logic services
 │   ├── Dockerfile         # Production Docker image
 │   └── Dockerfile.dev     # Development Docker image
 ├── react-frontend/         # React frontend
 │   ├── src/               # Source code
 │   │   ├── components/    # React components
+│   │   │   ├── login/     # OAuth login components
+│   │   │   └── shared/    # Shared UI components
 │   │   ├── context/       # React context providers
 │   │   ├── hooks/         # Custom React hooks
 │   │   └── types/         # TypeScript type definitions
@@ -100,6 +188,7 @@ neural-decks/
 │   └── Dockerfile.dev     # Development Docker image
 ├── docker-compose.yml      # Production Docker setup
 ├── docker-compose.dev.yml  # Development Docker setup
+├── OAUTH2_SESSION_PERSISTENCE.md # OAuth session management guide
 └── DOCKER_README.md       # Detailed Docker documentation
 ```
 
@@ -108,7 +197,8 @@ neural-decks/
 - **Real-time multiplayer**: Play with friends or random players
 - **AI-generated cards**: Unique, hilarious cards every game
 - **WebSocket communication**: Real-time game updates
-- **User authentication**: Secure login and registration
+- **OAuth authentication**: Secure login with Google and Discord
+- **Session persistence**: Extended login sessions with refresh tokens
 - **Game rooms**: Create or join game sessions
 - **Responsive design**: Works on desktop and mobile
 
@@ -161,32 +251,63 @@ docker-compose -f docker-compose.dev.yml exec redis redis-cli
 
 The application uses these environment variables:
 
-**Backend:**
+**OAuth Configuration:**
+- `GOOGLE_OAUTH_CLIENT_ID`: Google OAuth client ID
+- `GOOGLE_OAUTH_CLIENT_SECRET`: Google OAuth client secret
+- `GOOGLE_OAUTH_REDIRECT_URI`: Google OAuth redirect URI
+- `DISCORD_OAUTH_CLIENT_ID`: Discord OAuth client ID
+- `DISCORD_OAUTH_CLIENT_SECRET`: Discord OAuth client secret
+- `DISCORD_OAUTH_REDIRECT_URI`: Discord OAuth redirect URI
+
+**JWT Configuration:**
+- `JWT_VERIFY_SECRET`: Secret key for JWT token signing
+
+**Database Configuration:**
+- `DATABASE_DSN`: PostgreSQL connection string
 - `REDIS_HOST`: Redis server hostname
 - `REDIS_PORT`: Redis server port
-- `POSTGRES_HOST`: PostgreSQL server hostname
-- `POSTGRES_PORT`: PostgreSQL server port
-- `POSTGRES_USER`: Database username
-- `POSTGRES_PASSWORD`: Database password
-- `POSTGRES_DB`: Database name
+- `REDIS_PASSWORD`: Redis password (optional)
+- `REDIS_DB`: Redis database number
 
-**Frontend:**
-- `VITE_API_URL`: Backend API URL
+**AI Configuration:**
+- `CHATGPT_API_KEY`: OpenAI API key for card generation
 
 ### Default Values (Docker)
 
 - **Database**: `postgresql://postgres:password@localhost:5432/neural_decks`
 - **Redis**: `redis://localhost:6379`
 - **Backend API**: `http://localhost:8080`
+- **OAuth Redirects**: `http://localhost:8080/auth/{provider}/callback`
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Port conflicts**: Make sure ports 3000, 5173, 8080, 5432, 6379, and 8081 are available
-2. **Docker build failures**: Check logs with `docker-compose logs [service-name]`
-3. **Database connection issues**: Ensure PostgreSQL and Redis are running
-4. **Hot reload not working**: Check that volumes are properly mounted in development
+1. **OAuth Setup Issues:**
+   - Verify OAuth client IDs and secrets are correct
+   - Ensure redirect URIs match exactly (including protocol)
+   - Check that OAuth applications are properly configured
+   - Verify environment variables are loaded correctly
+
+2. **Port conflicts**: Make sure ports 3000, 5173, 8080, 5432, 6379, and 8081 are available
+3. **Docker build failures**: Check logs with `docker-compose logs [service-name]`
+4. **Database connection issues**: Ensure PostgreSQL and Redis are running
+5. **Hot reload not working**: Check that volumes are properly mounted in development
+
+### OAuth Troubleshooting
+
+1. **"State Mismatch" Error:**
+   - Clear browser cookies and try again
+   - Check that OAuth state is being properly managed
+
+2. **"Code-Token Exchange Failed":**
+   - Verify OAuth client credentials
+   - Check redirect URI configuration
+   - Ensure OAuth application is properly set up
+
+3. **"User Data Fetch Failed":**
+   - Check OAuth scopes are correctly configured
+   - Verify API permissions for the OAuth application
 
 ### Reset Everything
 
@@ -223,7 +344,8 @@ docker-compose -f docker-compose.dev.yml up --build
 - **Cache**: Redis 7
 - **AI**: OpenAI GPT integration
 - **Real-time**: WebSocket communication
-- **Authentication**: JWT tokens
+- **Authentication**: OAuth 2.0 (Google, Discord) with JWT tokens
+- **Session Management**: Refresh tokens with automatic renewal
 
 ## 🤝 Contributing
 
@@ -237,6 +359,7 @@ docker-compose -f docker-compose.dev.yml up --build
 
 ## 📖 Additional Documentation
 
+- [OAuth2 Session Persistence Guide](OAUTH2_SESSION_PERSISTENCE.md) - Detailed OAuth session management
 - [Docker Setup Guide](DOCKER_README.md) - Detailed Docker documentation
 - [API Documentation](docs/api.md) - Backend API reference
 - [Frontend Components](docs/frontend.md) - React component documentation

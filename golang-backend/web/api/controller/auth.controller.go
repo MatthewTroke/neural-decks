@@ -8,8 +8,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -75,7 +77,16 @@ func (ac *AuthController) HandleGoogleAuthCallback(c *fiber.Ctx) error {
 		return c.SendString("State Mismatch")
 	}
 
-	c.ClearCookie("google_oauth_state")
+	// Clear the state cookie with matching parameters
+	c.Cookie(&fiber.Cookie{
+		Name:     "google_oauth_state",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour), // Expire immediately
+		HTTPOnly: true,
+		SameSite: "lax",
+		Secure:   false,
+		Path:     "/",
+	})
 
 	googleConfig := ac.GoogleConfig
 
@@ -130,15 +141,22 @@ func (ac *AuthController) HandleGoogleAuthCallback(c *fiber.Ctx) error {
 		return fmt.Errorf("there was an issue getting or creating a user: %v", err)
 	}
 
-	jwt, err := ac.JWTAuthService.CreateJWT(result.Name, result.Email, result.ID, result.Image, result.EmailVerified)
-
+	// Create both access and refresh tokens
+	accessToken, err := ac.JWTAuthService.CreateAccessToken(result.Name, result.Email, result.ID, result.Image, result.EmailVerified)
 	if err != nil {
-		return fmt.Errorf("failed to create jwt_: %v", err)
+		return fmt.Errorf("failed to create access token: %v", err)
 	}
 
-	ac.JWTAuthService.HandleSetJWTInCookie(c, jwt)
+	refreshToken, err := ac.JWTAuthService.CreateRefreshToken(result.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create refresh token: %v", err)
+	}
 
-	return c.Redirect("http://localhost:5173/dashboard")
+	// Set both tokens in cookies
+	ac.JWTAuthService.HandleSetAccessTokenInCookie(c, accessToken)
+	ac.JWTAuthService.HandleSetRefreshTokenInCookie(c, refreshToken)
+
+	return c.Redirect("http://localhost:5173/games")
 }
 
 func (ac *AuthController) HandleBeginDiscordOAuthLogin(c *fiber.Ctx) error {
@@ -182,7 +200,16 @@ func (ac *AuthController) HandleDiscordAuthCallback(c *fiber.Ctx) error {
 		return c.SendString("State Mismatch")
 	}
 
-	c.ClearCookie("discord_oauth_state")
+	// Clear the state cookie with matching parameters
+	c.Cookie(&fiber.Cookie{
+		Name:     "discord_oauth_state",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour), // Expire immediately
+		HTTPOnly: true,
+		SameSite: "lax",
+		Secure:   false,
+		Path:     "/",
+	})
 
 	discordConfig := ac.DiscordConfig
 
@@ -261,13 +288,80 @@ func (ac *AuthController) HandleDiscordAuthCallback(c *fiber.Ctx) error {
 		return fmt.Errorf("there was an issue getting or creating a user: %v", err)
 	}
 
-	jwt, err := ac.JWTAuthService.CreateJWT(result.Name, result.Email, result.ID, result.Image, result.EmailVerified)
-
+	// Create both access and refresh tokens
+	accessToken, err := ac.JWTAuthService.CreateAccessToken(result.Name, result.Email, result.ID, result.Image, result.EmailVerified)
 	if err != nil {
-		return fmt.Errorf("failed to create jwt_: %v", err)
+		return fmt.Errorf("failed to create access token: %v", err)
 	}
 
-	ac.JWTAuthService.HandleSetJWTInCookie(c, jwt)
+	refreshToken, err := ac.JWTAuthService.CreateRefreshToken(result.ID)
+	if err != nil {
+		return fmt.Errorf("failed to create refresh token: %v", err)
+	}
 
-	return c.Redirect("http://localhost:5173/dashboard")
+	// Set both tokens in cookies
+	ac.JWTAuthService.HandleSetAccessTokenInCookie(c, accessToken)
+	ac.JWTAuthService.HandleSetRefreshTokenInCookie(c, refreshToken)
+
+	return c.Redirect("http://localhost:5173/games")
+}
+
+func (ac *AuthController) HandleRefreshToken(c *fiber.Ctx) error {
+	refreshToken := c.Cookies("neural_decks_refresh")
+
+	if refreshToken == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "No refresh token provided",
+		})
+	}
+
+	newAccessToken, err := ac.JWTAuthService.RefreshAccessToken(refreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid refresh token",
+		})
+	}
+
+	// Set new access token in cookie
+	ac.JWTAuthService.HandleSetAccessTokenInCookie(c, newAccessToken)
+
+	return c.JSON(fiber.Map{
+		"message": "Token refreshed successfully",
+	})
+}
+
+func (ac *AuthController) HandleLogout(c *fiber.Ctx) error {
+	// Get the refresh token from cookies
+	refreshToken := c.Cookies("neural_decks_refresh")
+
+	// Invalidate the refresh token if it exists
+	if refreshToken != "" {
+		if err := ac.JWTAuthService.InvalidateRefreshToken(refreshToken); err != nil {
+			log.Printf("❌ [AUTH] Failed to invalidate refresh token during logout: %v", err)
+		} else {
+			log.Printf("✅ [AUTH] Refresh token invalidated during logout")
+		}
+	}
+
+	// Clear all auth cookies
+	ac.JWTAuthService.ClearAuthCookies(c)
+
+	return c.JSON(fiber.Map{
+		"message": "Logged out successfully",
+	})
+}
+
+func (ac *AuthController) HandleInvalidateAllTokens(c *fiber.Ctx) error {
+	// Get user ID from the authenticated user (from JWT claims)
+	userID := c.Locals("user").(*domain.CustomClaim).UserID
+
+	if err := ac.JWTAuthService.InvalidateAllRefreshTokensForUser(userID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to invalidate tokens",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "All tokens invalidated successfully",
+	})
 }

@@ -4,15 +4,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useMutation } from "@tanstack/react-query"
-import axios from "axios"
+import api from "@/lib/axios"
 import { Link } from "react-router-dom"
 
 export default function LoginPage() {
     const googleAuthMutation = useMutation({
         mutationFn: async () => {
-          const response = await axios.get("http://localhost:8080/auth/google", {
-            withCredentials: true,
-          });
+          const response = await api.get("/auth/google");
     
           return response.data;
         },
@@ -26,9 +24,7 @@ export default function LoginPage() {
 
       const discordAuthMutation = useMutation({
         mutationFn: async () => {
-          const response = await axios.get("http://localhost:8080/auth/discord", {
-            withCredentials: true,
-          });
+          const response = await api.get("/auth/discord");
     
           return response.data;
         },

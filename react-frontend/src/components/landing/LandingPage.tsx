@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";

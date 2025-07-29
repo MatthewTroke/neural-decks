@@ -2,10 +2,10 @@ package domain
 
 type UserRepository interface {
 	CreateUser(user *User) error
-	GetUserByID(id uint) (*User, error)
+	GetUserByID(id string) (*User, error)
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(user *User) error
-	DeleteUser(id uint) error
+	DeleteUser(id string) error
 	UpsertUserByID(user *User) (*User, error)
 }
 

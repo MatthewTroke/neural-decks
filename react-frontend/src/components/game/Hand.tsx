@@ -19,11 +19,11 @@ export default function Hand(props: {
     props.game.players.find((p) => p.is_card_czar)?.user_id === player?.user_id;
 
   if (!player) {
-    return <div>no cards!</div>;
+    return null;
   }
 
   if (props.game.status === "Setup") {
-    return <div>Waiting for game to start...</div>;
+    return null
   }
 
   const disabled = Boolean(player.placed_card) || playerIsCardCzar;
@@ -59,6 +59,8 @@ export default function Hand(props: {
   ];
 
   return (
+    <div className="relative flex justify-center md:min-h-[32rem] container mx-auto p-6">
+
     <div className="flex flex-col justify-center items-center">
       <div className="flex flex-col items-center justify-center lg:absolute bottom-0">
         <h3 className="text-center sm:text-left text-lg font-semibold mb-3">
@@ -127,6 +129,7 @@ export default function Hand(props: {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }

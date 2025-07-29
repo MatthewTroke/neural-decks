@@ -31,9 +31,11 @@ func NewDatabaseInstance(env *Env) *gorm.DB {
 		}
 
 		db.Migrator().DropTable(&domain.User{})
+		db.Migrator().DropTable(&domain.RefreshToken{})
 
 		err = db.AutoMigrate(
 			&domain.User{},
+			&domain.RefreshToken{},
 		)
 
 		if err != nil {

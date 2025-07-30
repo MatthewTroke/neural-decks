@@ -14,11 +14,13 @@ import { Card, CardContent } from "../ui/card";
 import { Spinner } from "../ui/spinner";
 import SystemMessages from "./SystemMessages";
 import { EmojiCard } from "../ui/emoji-card";
+import Timer from "./Timer";
 
 export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
   const [game, setGame] = useState<Game | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [timerKey, setTimerKey] = useState<number>(0);
   const { user } = useAuth();
 
   // Function to handle incoming WebSocket messages
@@ -28,7 +30,16 @@ export default function GameComponent() {
   }) => {
     switch (message.type) {
       case "GAME_UPDATE":
+        const previousGame = game;
         setGame(message.payload);
+        
+        // Reset timer if game state changed (new round, phase change, etc.)
+        if (previousGame && message.payload) {
+          if (previousGame.round_status !== message.payload.round_status ||
+              previousGame.current_game_round !== message.payload.current_game_round) {
+            setTimerKey(prev => prev + 1);
+          }
+        }
         break;
       case "CHAT_MESSAGE":
         setChatMessages([...chatMessages, message.payload]);
@@ -128,6 +139,13 @@ export default function GameComponent() {
     <>
       <SiteHeader title={`Game: ${game.name}`} />
       <div className="flex flex-col">
+        {/* Timer display */}
+        <div className="container mx-auto px-6 py-2 flex justify-center">
+          <Timer 
+            key={timerKey}
+            isActive={game.status === "InProgress"}
+          />
+        </div>
         <div className="container mx-auto p-6">
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-3 order-1 lg:order-2 lg:col-span-1">

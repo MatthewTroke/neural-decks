@@ -147,5 +147,8 @@ func (h *PickWinningCardHandler) Handle() error {
 	h.Hub.Broadcast(jsonMessage)
 	h.Hub.Broadcast(jsonChatMessage)
 
+	// Reset timer when card czar picks winning card (moving to round continuation phase)
+	h.GameStateService.ResetAutoContinueTimer(h.Payload.GameID)
+
 	return nil
 }

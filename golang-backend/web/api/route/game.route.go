@@ -21,11 +21,17 @@ func NewGameRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group f
 	// Set EventService on GameStateService to complete the circular dependency
 	gameStateService.SetEventService(eventService)
 
+	// Create room manager for WebSocket broadcasting
+	roomManager := domain.NewRoomManager()
+
+	// Set the room manager on the game state service for broadcasting
+	gameStateService.SetRoomManager(roomManager)
+
 	gc := &controller.GameController{
 		GameService:      gameStateService,
 		EventService:     eventService,
 		GameStateService: gameStateService,
-		RoomManager:      domain.NewRoomManager(),
+		RoomManager:      roomManager,
 		ChatGPTService:   services.NewChatGPTService(env),
 		Env:              env,
 	}

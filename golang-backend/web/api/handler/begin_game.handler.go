@@ -242,5 +242,7 @@ func (h *BeginGameHandler) Handle() error {
 	h.Hub.Broadcast(jsonMessage)
 	h.Hub.Broadcast(jsonChatMessage)
 
+	go h.GameStateService.CreateAutoContinueTimer(game)
+
 	return nil
 }

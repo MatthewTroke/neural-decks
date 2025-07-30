@@ -98,5 +98,11 @@ func (h *PlayCardHandler) Handle() error {
 
 	h.Hub.Broadcast(jsonMessage)
 
+	hasAllPlayed, err := newGame.HasAllPlayersPlayedWhiteCard()
+
+	if err == nil && hasAllPlayed {
+		h.GameStateService.ResetAutoContinueTimer(h.Payload.GameID)
+	}
+
 	return nil
 }

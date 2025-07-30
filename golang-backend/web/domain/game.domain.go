@@ -70,6 +70,7 @@ const (
 	EventDealCards                GameEventType = "DealCards"
 	EventDrawBlackCard            GameEventType = "DrawBlackCard"
 	EventSetCardCzar              GameEventType = "SetCardCzar"
+	EventTimerUpdate              GameEventType = "TimerUpdate"
 )
 
 type GameEventPayloadCardCzarChoseWinningCard struct {
@@ -192,6 +193,18 @@ func NewGameEventPayloadSetCardCzar(gameID string, playerID string) GameEventPay
 	}
 }
 
+type GameEventPayloadTimerUpdate struct {
+	GameID string `json:"game_id"`
+	Timer  int    `json:"timer"` // Seconds remaining
+}
+
+func NewGameEventPayloadTimerUpdate(gameID string, timer int) GameEventPayloadTimerUpdate {
+	return GameEventPayloadTimerUpdate{
+		GameID: gameID,
+		Timer:  timer,
+	}
+}
+
 // GameEvent represents a single event in the game event stream
 // Payload contains event-specific data, marshaled as JSON
 // ID should be unique (e.g., UUID)
@@ -204,24 +217,26 @@ type GameEvent struct {
 }
 
 type Game struct {
-	Mutex            sync.RWMutex   `json:"-"`
-	ID               string         `json:"id"`
-	Name             string         `json:"name"`
-	Collection       *Collection    `json:"collection"`
-	WinnerCount      int            `json:"winner_count"`
-	MaxPlayerCount   int            `json:"max_player_count"`
-	Status           GameStatus     `json:"status"`
-	Players          []*Player      `json:"players"`
-	WhiteCards       []*Card        `json:"white_cards"`
-	BlackCard        *Card          `json:"black_card"`
-	RoundStatus      RoundStatus    `json:"round_status"`
-	CurrentGameRound int            `json:"current_game_round"`
-	RoundWinner      *Player        `json:"round_winner"`
-	LastVacatedAt    *time.Time     `json:"last_vacated_at"`
-	Vacated          bool           `json:"vacated"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `json:"-"`
+	Mutex             sync.RWMutex   `json:"-"`
+	ID                string         `json:"id"`
+	Name              string         `json:"name"`
+	Collection        *Collection    `json:"collection"`
+	WinnerCount       int            `json:"winner_count"`
+	MaxPlayerCount    int            `json:"max_player_count"`
+	Status            GameStatus     `json:"status"`
+	Players           []*Player      `json:"players"`
+	WhiteCards        []*Card        `json:"white_cards"`
+	BlackCard         *Card          `json:"black_card"`
+	RoundStatus       RoundStatus    `json:"round_status"`
+	CurrentGameRound  int            `json:"current_game_round"`
+	RoundWinner       *Player        `json:"round_winner"`
+	LastVacatedAt     *time.Time     `json:"last_vacated_at"`
+	LastEventAt       *time.Time     `json:"last_event_at"`
+	AutoProgressTimer int            `json:"auto_progress_timer"` // Seconds remaining until auto-progress
+	Vacated           bool           `json:"vacated"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
+	DeletedAt         gorm.DeletedAt `json:"-"`
 }
 
 func (g *Game) Lock() {
@@ -242,6 +257,10 @@ func (g *Game) SetRoundStatus(status RoundStatus) {
 
 func (g *Game) SetRoundWinner(player *Player) {
 	g.RoundWinner = player
+}
+
+func (g *Game) SetLastEventAt(t time.Time) {
+	g.LastEventAt = &t
 }
 
 func (g *Game) AddPlayer(player *Player) error {
@@ -514,6 +533,8 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 
 	fmt.Printf("Applying event: %s (GameID: %s)\n", event.Type, event.GameID)
 
+	g.SetLastEventAt(event.CreatedAt)
+
 	switch event.Type {
 	case EventGameBegins:
 		var payload GameEventPayloadGameBegins
@@ -626,9 +647,6 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 			}
 		}
 
-		// game.RemovePlacedCards()
-		// game.DrawWhiteCardsFromAllPlayersWhoPlayed()
-
 		currentCardCzar, err := g.FindCurrentCardCzar()
 
 		if err != nil {
@@ -717,6 +735,14 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 		if hasPlayersPlayedWhiteCard {
 			g.SetRoundStatus(CardCzarPickingWinningCard)
 		}
+	case EventTimerUpdate:
+		var payload GameEventPayloadTimerUpdate
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventTimerUpdate payload: %w", err)
+		}
+
+		g.AutoProgressTimer = payload.Timer
 	default:
 		return fmt.Errorf("unknown event type: %s", event.Type)
 	}

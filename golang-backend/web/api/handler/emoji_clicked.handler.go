@@ -27,7 +27,7 @@ func NewEmojiClickedHandler(payload request.GameEventPayloadEmojiClickedRequest,
 }
 
 func (h *EmojiClickedHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to validate inbound %s event: %w", domain.EventEmojiClicked, err)

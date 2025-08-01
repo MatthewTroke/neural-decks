@@ -32,7 +32,7 @@ func NewPlayCardHandler(payload request.GameEventPayloadPlayCardRequest, eventSe
 }
 
 func (h *PlayCardHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)
@@ -62,7 +62,7 @@ func (h *PlayCardHandler) Validate() error {
 }
 
 func (h *PlayCardHandler) Handle() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PlayCard, err)

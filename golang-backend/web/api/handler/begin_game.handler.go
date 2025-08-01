@@ -39,7 +39,7 @@ func NewBeginGameHandler(payload request.GameEventPayloadGameBeginsRequest, even
 }
 
 func (h *BeginGameHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to validate inbound %s event: %w", domain.BeginGame, err)
@@ -57,7 +57,7 @@ func (h *BeginGameHandler) Validate() error {
 }
 
 func (h *BeginGameHandler) Handle() error {
-	currentGame, err := h.EventService.GetGameById(h.Payload.GameID)
+	currentGame, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.BeginGame, err)

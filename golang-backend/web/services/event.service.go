@@ -24,7 +24,7 @@ func (s *EventService) AppendEvent(event domain.GameEvent) error {
 	return s.eventRepo.AppendEvent(event)
 }
 
-func (s *EventService) GetGameById(gameID string) (*domain.Game, error) {
+func (s *EventService) BuildGameByGameId(gameID string) (*domain.Game, error) {
 	game, err := s.gameStateService.GetGameById(gameID)
 
 	if err != nil {
@@ -111,27 +111,22 @@ func (s *EventService) GetAllGamesWithCurrentState() ([]*domain.Game, error) {
 	return currentGames, nil
 }
 
-// AddUsedCard adds a card ID to the set of used cards for a game
 func (s *EventService) AddUsedCard(gameID, cardID string) error {
 	return s.eventRepo.AddUsedCard(gameID, cardID)
 }
 
-// AddUsedCards adds multiple card IDs to the set of used cards for a game in a single operation
 func (s *EventService) AddUsedCards(gameID string, cardIDs []string) error {
 	return s.eventRepo.AddUsedCards(gameID, cardIDs)
 }
 
-// GetUsedCards returns all used card IDs for a game
 func (s *EventService) GetUsedCards(gameID string) ([]string, error) {
 	return s.eventRepo.GetUsedCards(gameID)
 }
 
-// IsCardUsed checks if a specific card ID is used in a game
 func (s *EventService) IsCardUsed(gameID, cardID string) (bool, error) {
 	return s.eventRepo.IsCardUsed(gameID, cardID)
 }
 
-// ClearUsedCards removes all used cards tracking for a game
 func (s *EventService) ClearUsedCards(gameID string) error {
 	return s.eventRepo.ClearUsedCards(gameID)
 }

@@ -47,7 +47,7 @@ func NewPickWinningCardHandler(payload request.GameEventPayloadCardCzarChoseWinn
 }
 
 func (h *PickWinningCardHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
@@ -100,7 +100,7 @@ func (h *PickWinningCardHandler) Validate() error {
 }
 
 func (h *PickWinningCardHandler) Handle() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
@@ -126,14 +126,7 @@ func (h *PickWinningCardHandler) Handle() error {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	// Check if anyone has won the game
-	var winner *domain.Player
-	for _, player := range newGame.Players {
-		if player.Score >= newGame.WinnerCount {
-			winner = player
-			break
-		}
-	}
+	winner := newGame.CheckForWinner()
 
 	if winner != nil {
 		// Game is over, someone won! Create and apply game winner event

@@ -32,7 +32,7 @@ func NewJoinGameHandler(payload request.GameEventPayloadJoinedGameRequest, event
 }
 
 func (h *JoinGameHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
@@ -52,7 +52,7 @@ func (h *JoinGameHandler) Validate() error {
 }
 
 func (h *JoinGameHandler) Handle() error {
-	currentGame, err := h.EventService.GetGameById(h.Payload.GameID)
+	currentGame, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)

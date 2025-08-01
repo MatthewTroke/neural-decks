@@ -31,13 +31,15 @@ const (
 	PickWinningCard InboundWebsocketGameType = "PICK_WINNING_CARD"
 	ContinueRound   InboundWebsocketGameType = "CONTINUE_ROUND"
 	BeginGame       InboundWebsocketGameType = "BEGIN_GAME"
+	EmojiClicked    InboundWebsocketGameType = "EMOJI_CLICKED"
 )
 
 type OutboundWebsocketGameType string
 
 const (
-	GameUpdate  OutboundWebsocketGameType = "GAME_UPDATE"
-	ChatMessage OutboundWebsocketGameType = "CHAT_MESSAGE"
+	GameUpdate          OutboundWebsocketGameType = "GAME_UPDATE"
+	ChatMessage         OutboundWebsocketGameType = "CHAT_MESSAGE"
+	EmojiClickedMessage OutboundWebsocketGameType = "EMOJI_CLICKED"
 )
 
 type RoundStatus string
@@ -47,6 +49,7 @@ const (
 	PlayersPickingCard         RoundStatus = "PlayersPickingCard"
 	CardCzarPickingWinningCard RoundStatus = "CardCzarPickingWinningCard"
 	CardCzarChoseWinningCard   RoundStatus = "CardCzarChoseWinningCard"
+	GameOver                   RoundStatus = "GameOver"
 )
 
 type GameStatus string
@@ -71,6 +74,9 @@ const (
 	EventDrawBlackCard            GameEventType = "DrawBlackCard"
 	EventSetCardCzar              GameEventType = "SetCardCzar"
 	EventTimerUpdate              GameEventType = "TimerUpdate"
+	EventGameWinner               GameEventType = "GameWinner"
+	EventClockUpdate              GameEventType = "ClockUpdate"
+	EventEmojiClicked             GameEventType = "EmojiClicked"
 )
 
 type GameEventPayloadCardCzarChoseWinningCard struct {
@@ -193,15 +199,29 @@ func NewGameEventPayloadSetCardCzar(gameID string, playerID string) GameEventPay
 	}
 }
 
-type GameEventPayloadTimerUpdate struct {
-	GameID string `json:"game_id"`
-	Timer  int    `json:"timer"` // Seconds remaining
+type GameEventPayloadClockUpdate struct {
+	GameID             string    `json:"game_id"`
+	NextAutoProgressAt time.Time `json:"next_auto_progress_at"`
 }
 
-func NewGameEventPayloadTimerUpdate(gameID string, timer int) GameEventPayloadTimerUpdate {
-	return GameEventPayloadTimerUpdate{
-		GameID: gameID,
-		Timer:  timer,
+func NewGameEventPayloadClockUpdate(gameID string, nextAutoProgressAt time.Time) GameEventPayloadClockUpdate {
+	return GameEventPayloadClockUpdate{
+		GameID:             gameID,
+		NextAutoProgressAt: nextAutoProgressAt,
+	}
+}
+
+type GameEventPayloadGameWinner struct {
+	GameID   string `json:"game_id"`
+	PlayerID string `json:"player_id"`
+	Score    int    `json:"score"`
+}
+
+func NewGameEventPayloadGameWinner(gameID string, playerID string, score int) GameEventPayloadGameWinner {
+	return GameEventPayloadGameWinner{
+		GameID:   gameID,
+		PlayerID: playerID,
+		Score:    score,
 	}
 }
 
@@ -217,26 +237,26 @@ type GameEvent struct {
 }
 
 type Game struct {
-	Mutex             sync.RWMutex   `json:"-"`
-	ID                string         `json:"id"`
-	Name              string         `json:"name"`
-	Collection        *Collection    `json:"collection"`
-	WinnerCount       int            `json:"winner_count"`
-	MaxPlayerCount    int            `json:"max_player_count"`
-	Status            GameStatus     `json:"status"`
-	Players           []*Player      `json:"players"`
-	WhiteCards        []*Card        `json:"white_cards"`
-	BlackCard         *Card          `json:"black_card"`
-	RoundStatus       RoundStatus    `json:"round_status"`
-	CurrentGameRound  int            `json:"current_game_round"`
-	RoundWinner       *Player        `json:"round_winner"`
-	LastVacatedAt     *time.Time     `json:"last_vacated_at"`
-	LastEventAt       *time.Time     `json:"last_event_at"`
-	AutoProgressTimer int            `json:"auto_progress_timer"` // Seconds remaining until auto-progress
-	Vacated           bool           `json:"vacated"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
-	DeletedAt         gorm.DeletedAt `json:"-"`
+	Mutex              sync.RWMutex   `json:"-"`
+	ID                 string         `json:"id"`
+	Name               string         `json:"name"`
+	Collection         *Collection    `json:"collection"`
+	WinnerCount        int            `json:"winner_count"`
+	MaxPlayerCount     int            `json:"max_player_count"`
+	Status             GameStatus     `json:"status"`
+	Players            []*Player      `json:"players"`
+	WhiteCards         []*Card        `json:"white_cards"`
+	BlackCard          *Card          `json:"black_card"`
+	RoundStatus        RoundStatus    `json:"round_status"`
+	CurrentGameRound   int            `json:"current_game_round"`
+	RoundWinner        *Player        `json:"round_winner"`
+	LastVacatedAt      *time.Time     `json:"last_vacated_at"`
+	LastEventAt        *time.Time     `json:"last_event_at"`
+	NextAutoProgressAt *time.Time     `json:"next_auto_progress_at"` // Timestamp when next auto-progress will happen
+	Vacated            bool           `json:"vacated"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `json:"-"`
 }
 
 func (g *Game) Lock() {
@@ -261,6 +281,10 @@ func (g *Game) SetRoundWinner(player *Player) {
 
 func (g *Game) SetLastEventAt(t time.Time) {
 	g.LastEventAt = &t
+}
+
+func (g *Game) SetNextAutoProgressAt(t time.Time) {
+	g.NextAutoProgressAt = &t
 }
 
 func (g *Game) AddPlayer(player *Player) error {
@@ -469,6 +493,15 @@ func (g *Game) FindWhiteCardOwner(card *Card) (*Player, error) {
 	return nil, fmt.Errorf("could not find white card owner")
 }
 
+func (g *Game) CheckForWinner() *Player {
+	for _, player := range g.Players {
+		if player.Score >= g.WinnerCount {
+			return player
+		}
+	}
+	return nil
+}
+
 func (g *Game) Clone() *Game {
 	g.Lock()
 	defer g.Unlock()
@@ -522,6 +555,18 @@ func (g *Game) Clone() *Game {
 	if g.LastVacatedAt != nil {
 		lastVacated := *g.LastVacatedAt
 		cloned.LastVacatedAt = &lastVacated
+	}
+
+	// Clone last event time
+	if g.LastEventAt != nil {
+		lastEvent := *g.LastEventAt
+		cloned.LastEventAt = &lastEvent
+	}
+
+	// Clone next auto progress time
+	if g.NextAutoProgressAt != nil {
+		nextAutoProgress := *g.NextAutoProgressAt
+		cloned.NextAutoProgressAt = &nextAutoProgress
 	}
 
 	return cloned
@@ -735,14 +780,33 @@ func (g *Game) ApplyEvent(event GameEvent) error {
 		if hasPlayersPlayedWhiteCard {
 			g.SetRoundStatus(CardCzarPickingWinningCard)
 		}
-	case EventTimerUpdate:
-		var payload GameEventPayloadTimerUpdate
+	case EventGameWinner:
+		var payload GameEventPayloadGameWinner
 
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
-			return fmt.Errorf("failed to unmarshal EventTimerUpdate payload: %w", err)
+			return fmt.Errorf("failed to unmarshal EventGameWinner payload: %w", err)
 		}
 
-		g.AutoProgressTimer = payload.Timer
+		// Find the winning player and mark them as game winner
+		for _, player := range g.Players {
+			if player.UserID == payload.PlayerID {
+				player.IsGameWinner = true
+				break
+			}
+		}
+
+		// Set game status to finished
+		g.SetRoundStatus(GameOver)
+		g.SetStatus(Finished)
+
+	case EventClockUpdate:
+		var payload GameEventPayloadClockUpdate
+
+		if err := json.Unmarshal(event.Payload, &payload); err != nil {
+			return fmt.Errorf("failed to unmarshal EventClockUpdate payload: %w", err)
+		}
+
+		g.NextAutoProgressAt = &payload.NextAutoProgressAt
 	default:
 		return fmt.Errorf("unknown event type: %s", event.Type)
 	}

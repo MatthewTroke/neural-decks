@@ -34,7 +34,7 @@ func NewContinueRoundHandler(payload request.GameEventPayloadGameRoundContinuedR
 }
 
 func (h *ContinueRoundHandler) Validate() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
@@ -50,7 +50,7 @@ func (h *ContinueRoundHandler) Validate() error {
 }
 
 func (h *ContinueRoundHandler) Handle() error {
-	game, err := h.EventService.GetGameById(h.Payload.GameID)
+	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
 		return fmt.Errorf("unable to handle inbound %s event: %w", domain.BeginGame, err)

@@ -202,7 +202,7 @@ func (gc *GameController) HandleJoinWebsocketGameRoom(c *websocket.Conn) {
 
 	hub.RegisterClient(c)
 
-	game, _ := gc.EventService.GetGameById(roomId)
+	game, _ := gc.EventService.BuildGameByGameId(roomId)
 
 	websocketMessage := domain.NewWebSocketMessage(domain.GameUpdate, game)
 	log := claim.Name + " has joined the room."

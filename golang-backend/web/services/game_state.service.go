@@ -66,21 +66,18 @@ func (s *GameStateService) RemoveGame(gameId string) {
 	delete(s.games, gameId)
 }
 
-// StopGameTimer stops the auto-continue timer for a game without removing it from memory
 func (s *GameStateService) StopGameTimer(gameId string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Stop timer for this game
 	if resetChan, exists := s.timerResets[gameId]; exists {
-		// Send a stop signal to the timer goroutine
 		select {
 		case resetChan <- false: // Use false as a stop signal
 		default:
-			// Channel is full, close it to force stop
 			close(resetChan)
 		}
 		delete(s.timerResets, gameId)
+
 		log.Printf("Stopped timer for game %s", gameId)
 	}
 }
@@ -125,7 +122,6 @@ func (s *GameStateService) SetRoomManager(roomManager *domain.RoomManager) {
 }
 
 func (s *GameStateService) CreateAutoContinueTimer(game *domain.Game) {
-	// Create reset channel for this game
 	s.mu.Lock()
 	s.timerResets[game.ID] = make(chan bool, 1)
 	s.mu.Unlock()
@@ -148,7 +144,7 @@ func (s *GameStateService) ResetAutoContinueTimer(gameID string) {
 	}
 
 	// Also update the clock for the game
-	game, err := s.eventService.GetGameById(gameID)
+	game, err := s.eventService.BuildGameByGameId(gameID)
 	if err != nil {
 		log.Printf("Error getting game for clock update: %v", err)
 		return
@@ -167,7 +163,7 @@ func (s *GameStateService) autoContinueGame(gameID string) {
 	for {
 		select {
 		case <-time.After(30 * time.Second):
-			game, err := s.eventService.GetGameById(gameID)
+			game, err := s.eventService.BuildGameByGameId(gameID)
 
 			if err != nil {
 				log.Printf("Game %s not found, stopping auto-continue", gameID)
@@ -235,17 +231,14 @@ func (s *GameStateService) autoProgress(game *domain.Game) {
 	case domain.PlayersPickingCard:
 		log.Printf("Auto-playing cards for game %s", game.ID)
 		s.autoPlayCards(game)
-		// Broadcast update after auto-playing
 		s.broadcastGameUpdate(game, "Auto-played cards for players")
 	case domain.CardCzarPickingWinningCard:
 		log.Printf("Auto-picking winning card for game %s", game.ID)
 		s.autoPickWinningCard(game)
-		// Broadcast update after auto-picking
 		s.broadcastGameUpdate(game, "Auto-picked winning card")
 	case domain.CardCzarChoseWinningCard:
 		log.Printf("Auto-continuing round for game %s", game.ID)
 		s.autoContinueRound(game)
-		// Broadcast update after auto-continuing
 		s.broadcastGameUpdate(game, "Auto-continued to next round")
 	default:
 		log.Printf("Unknown round status: %s for game %s", game.RoundStatus, game.ID)

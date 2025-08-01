@@ -86,6 +86,8 @@ type GameStateService struct {
 }
 ```
 
+**Note**: Currently, initial game state is stored in-memory only. The Redis event store takes this initial state and reconstructs the current game state by applying all events. In the future, this will be replaced with a more persistent storage solution (e.g., PostgreSQL) for the initial game state.
+
 ### B. Auto-Progress System
 The service implements intelligent auto-progression:
 
@@ -249,4 +251,67 @@ func (h *PlayCardHandler) Handle() error {
 9. State Broadcast (WebSocket)
    ↓
 10. Frontend Update
+```
+
+## 9. Current Architectural Concerns
+
+While the current architecture provides a solid foundation, there are several areas that could be improved for better maintainability and scalability:
+
+### A. Service Coupling Issues
+**Problem**: Services are tightly coupled through direct dependency injection
+```go
+// Current tight coupling example
+type GameStateService struct {
+    eventService *EventService  // Direct dependency
+    roomManager  *domain.RoomManager
+}
+
+type EventService struct {
+    gameStateService *GameStateService  // Circular dependency
+}
+```
+
+**Issues**:
+- **Circular Dependencies**: Services reference each other directly
+- **Tight Coupling**: Changes in one service require changes in others
+- **Testing Complexity**: Hard to unit test services in isolation
+- **Violation of Single Responsibility**: Services know too much about each other
+
+**Potential Solutions**:
+- **Event Bus/Message Queue**: Decouple services through events
+- **Interface Segregation**: Define clear contracts between services
+- **Dependency Inversion**: Depend on abstractions, not concretions
+
+### B. Game State Service Over-Responsibility
+**Problem**: The `GameStateService` has become a "god object" handling too many concerns
+
+**Current Responsibilities**: (THIS IS TOO MUCH IMO)
+- In-memory game state management
+- Timer management and auto-progression
+- WebSocket broadcasting coordination
+- Event service coordination
+- Game cleanup and lifecycle management
+
+**Issues**:
+- **Single Responsibility Violation**: One service doing too many things
+- **Hard to Test**: Complex interactions make unit testing difficult
+- **Scalability Concerns**: Timer management doesn't scale across multiple instances
+- **Maintenance Burden**: Changes affect multiple concerns simultaneously
+
+### C. Initial State Management
+**Current State**: Initial game state is stored in-memory only
+```go
+// Current approach
+games map[string]*domain.Game  // In-memory only
+```
+
+**Future Direction**: Move to persistent storage for initial game state
+```go
+// Future approach
+type GameRepository interface {
+    Create(game *Game) error
+    GetByID(id string) (*Game, error)
+    Update(game *Game) error
+    Delete(id string) error
+}
 ```

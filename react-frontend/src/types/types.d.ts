@@ -59,6 +59,7 @@ interface Game {
   round_winner: Player;
   current_game_round: number;
   last_vacated_at: Date | null;
+  next_auto_progress_at: string | null; // ISO timestamp when next auto-progress will happen
   vacated: boolean;
   created_at: Date;
   updated_at: Date;

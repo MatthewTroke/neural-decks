@@ -15,17 +15,18 @@ import api from "@/lib/axios";
 import {
   CircleArrowRight,
   LoaderIcon,
+  Plus,
   RefreshCw,
   Sparkles,
-  Timer,
+  Timer as TimerIcon,
   Trophy,
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { SiteHeader } from "../site-header";
 import { Separator } from "../ui/separator";
-import { CreateGameDialog } from "./CreateGame";
 import { NoGamesPlaceholder } from "./NoGamesPlaceholder";
+import Timer from "../game/Timer";
 
 // Mock data for demonstration
 const onlinePlayers = [
@@ -62,6 +63,7 @@ const onlinePlayers = [
 ];
 
 export default function GameLobby() {
+  const navigate = useNavigate();
   const { data: games, isLoading } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
@@ -104,7 +106,10 @@ export default function GameLobby() {
               <Button variant="outline" size="icon" onClick={() => {}}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
-              <CreateGameDialog />
+              <Button onClick={() => navigate("/games/new")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Game
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -209,8 +214,11 @@ function Games(props: { games: Game[] }) {
                   {game.status === "InProgress" ? "In Progress" : "Waiting"}
                 </Badge>
                 <div className="flex items-center">
-                  <Timer className="h-4 w-4 mr-1" />
-                  0:00
+                  <Timer 
+                    isActive={game.status === "InProgress"}
+                    nextAutoProgressAt={game.next_auto_progress_at}
+                    roundState={game.round_status}
+                  />
                 </div>
                 <div className="flex items-center">
                   <Trophy className="h-4 w-4 mr-1" />

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type PickWinningCardPayload struct {
@@ -76,10 +77,6 @@ func (h *PickWinningCardHandler) Validate() error {
 		return fmt.Errorf("unable to handle inbound %s event, unable to find player with given user id: %w", domain.PickWinningCard, err)
 	}
 
-	// if !player.IsCardCzar {
-	// 	return fmt.Errorf("unable to handle inbound %s event, player picking winning card is not a card czar: %w", domain.PickWinningCard, err)
-	// }
-
 	if !player.IsCardCzar {
 		return &InvalidUserActionError{
 			Message: "Sorry! you cant do that",
@@ -129,26 +126,82 @@ func (h *PickWinningCardHandler) Handle() error {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
-	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Card czar has chosen a winning card.")
-
-	jsonMessage, err := json.Marshal(message)
-
-	if err != nil {
-		return errors.New("failed to marshal message")
+	// Check if anyone has won the game
+	var winner *domain.Player
+	for _, player := range newGame.Players {
+		if player.Score >= newGame.WinnerCount {
+			winner = player
+			break
+		}
 	}
 
-	jsonChatMessage, err := json.Marshal(chatMessage)
+	if winner != nil {
+		// Game is over, someone won! Create and apply game winner event
+		gameWinnerEvent, err := h.EventService.CreateGameEvent(
+			h.Payload.GameID,
+			domain.EventGameWinner,
+			domain.NewGameEventPayloadGameWinner(h.Payload.GameID, winner.UserID, winner.Score),
+		)
 
-	if err != nil {
-		return fmt.Errorf("unable to marshal chat message: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed to create game winner event: %w", err)
+		}
+
+		// Apply the game winner event to the new game state
+		if err := newGame.ApplyEvent(gameWinnerEvent); err != nil {
+			return fmt.Errorf("failed to apply game winner event: %w", err)
+		}
+
+		// Persist the game winner event
+		if err := h.EventService.AppendEvent(gameWinnerEvent); err != nil {
+			return fmt.Errorf("failed to persist game winner event: %w", err)
+		}
+
+		message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
+		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, fmt.Sprintf("🎉 %s has won the game with %d points! 🎉", winner.Name, winner.Score))
+
+		jsonMessage, err := json.Marshal(message)
+		if err != nil {
+			return errors.New("failed to marshal message")
+		}
+
+		jsonChatMessage, err := json.Marshal(chatMessage)
+		if err != nil {
+			return fmt.Errorf("unable to marshal chat message: %w", err)
+		}
+
+		h.Hub.Broadcast(jsonMessage)
+		h.Hub.Broadcast(jsonChatMessage)
+
+		// Stop the timer immediately to prevent logging spam
+		h.GameStateService.StopGameTimer(h.Payload.GameID)
+
+		// Schedule cleanup of the finished game after 30 seconds
+		go func() {
+			time.Sleep(30 * time.Second)
+			h.GameStateService.CleanupGame(h.Payload.GameID)
+		}()
+	} else {
+		// Normal round continuation
+		message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
+		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Card czar has chosen a winning card.")
+
+		jsonMessage, err := json.Marshal(message)
+		if err != nil {
+			return errors.New("failed to marshal message")
+		}
+
+		jsonChatMessage, err := json.Marshal(chatMessage)
+		if err != nil {
+			return fmt.Errorf("unable to marshal chat message: %w", err)
+		}
+
+		h.Hub.Broadcast(jsonMessage)
+		h.Hub.Broadcast(jsonChatMessage)
+
+		// Only reset timer if game is still in progress
+		h.GameStateService.ResetAutoContinueTimer(h.Payload.GameID)
 	}
-
-	h.Hub.Broadcast(jsonMessage)
-	h.Hub.Broadcast(jsonChatMessage)
-
-	// Reset timer when card czar picks winning card (moving to round continuation phase)
-	h.GameStateService.ResetAutoContinueTimer(h.Payload.GameID)
 
 	return nil
 }

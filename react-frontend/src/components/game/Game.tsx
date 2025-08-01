@@ -20,8 +20,25 @@ export default function GameComponent() {
   const { gameId } = useParams<{ gameId: string }>();
   const [game, setGame] = useState<Game | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [timerKey, setTimerKey] = useState<number>(0);
+  const [scrollingEmojis, setScrollingEmojis] = useState<Array<{ id: string, emoji: string, timestamp: number, rightOffset: number }>>([]);
   const { user } = useAuth();
+
+  const handleEmojiClick = (emoji: string) => {
+    const newEmoji = {
+      id: `${Date.now()}-${Math.random()}`,
+      emoji,
+      timestamp: Date.now(),
+      rightOffset: Math.random() * 50 + 10 // Random offset between 10-60px from right
+    };
+
+    // setScrollingEmojis(prev => [...prev, newEmoji]);
+    handleEmojiClicked(emoji);
+
+    // Remove emoji after animation completes
+    setTimeout(() => {
+      setScrollingEmojis(prev => prev.filter(e => e.id !== newEmoji.id));
+    }, 3000);
+  };
 
   // Function to handle incoming WebSocket messages
   const handleIncomingWebSocketMessage = (message: {
@@ -30,19 +47,21 @@ export default function GameComponent() {
   }) => {
     switch (message.type) {
       case "GAME_UPDATE":
-        const previousGame = game;
         setGame(message.payload);
-        
-        // Reset timer if game state changed (new round, phase change, etc.)
-        if (previousGame && message.payload) {
-          if (previousGame.round_status !== message.payload.round_status ||
-              previousGame.current_game_round !== message.payload.current_game_round) {
-            setTimerKey(prev => prev + 1);
-          }
-        }
         break;
       case "CHAT_MESSAGE":
         setChatMessages([...chatMessages, message.payload]);
+        break;
+      case "EMOJI_CLICKED":
+
+        const newEmoji = {
+          id: `${Date.now()}-${Math.random()}`,
+          emoji: message.payload.emoji,
+          timestamp: Date.now(),
+          rightOffset: Math.random() * 50 + 10 // Random offset between 10-60px from right
+        };
+
+        setScrollingEmojis(prev => [...prev, newEmoji]);
         break;
       default:
     }
@@ -62,6 +81,19 @@ export default function GameComponent() {
     onError: (error) => console.error("WebSocket error:", error),
     shouldReconnect: (closeEvent) => true,
   });
+
+  const handleEmojiClicked = (emoji: string) => {
+    sendMessage(
+      JSON.stringify({
+        type: "EmojiClicked",
+        payload: {
+          emoji,
+          game_id: gameId,
+          user_id: user?.user_id,
+        },
+      })
+    );
+  };
 
   const handleJoinGame = () => {
     sendMessage(
@@ -141,9 +173,10 @@ export default function GameComponent() {
       <div className="flex flex-col">
         {/* Timer display */}
         <div className="container mx-auto px-6 py-2 flex justify-center">
-          <Timer 
-            key={timerKey}
+          <Timer
             isActive={game.status === "InProgress"}
+            nextAutoProgressAt={game.next_auto_progress_at}
+            roundState={game.round_status}
           />
         </div>
         <div className="container mx-auto p-6">
@@ -173,7 +206,7 @@ export default function GameComponent() {
 
       {/* Emoji List */}
       <div className="mx-auto container p-6">
-        <EmojiCard />
+        <EmojiCard scrollingEmojis={scrollingEmojis} handleEmojiClick={handleEmojiClick} />
       </div>
 
       {/* Chat */}

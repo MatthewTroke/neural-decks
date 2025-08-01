@@ -115,6 +115,18 @@ func (gc *GameController) HandleGameRoomWebsocketInboundMessage(msg []byte, hub 
 			claim,
 			hub,
 		)
+	case domain.EventEmojiClicked:
+		var payload request.GameEventPayloadEmojiClickedRequest
+		if err := json.Unmarshal(message.Payload, &payload); err != nil {
+			return errors.New("unable to unmarshal EmojiClickedPayload")
+		}
+		wsHandler = handler.NewEmojiClickedHandler(
+			payload,
+			gc.EventService,
+			gc.GameStateService,
+			claim,
+			hub,
+		)
 	}
 
 	if wsHandler == nil {
@@ -163,7 +175,7 @@ func (gc *GameController) CreateGame(c *fiber.Ctx) error {
 		ID:               gameId.String(),
 		Name:             request.Name,
 		Collection:       collection,
-		WinnerCount:      5,
+		WinnerCount:      request.WinnerCount,
 		MaxPlayerCount:   request.MaxPlayerCount,
 		Status:           "Setup",
 		Players:          []*domain.Player{},
@@ -179,7 +191,7 @@ func (gc *GameController) CreateGame(c *fiber.Ctx) error {
 
 	gc.GameService.AddGame(game)
 
-	return nil
+	return c.Status(fiber.StatusCreated).JSON(game)
 }
 
 func (gc *GameController) HandleJoinWebsocketGameRoom(c *websocket.Conn) {

@@ -259,7 +259,6 @@ func (h *ContinueRoundHandler) Handle() error {
 	h.Hub.Broadcast(jsonMessage)
 	h.Hub.Broadcast(jsonChatMessage)
 
-	// Reset timer when round continues (moving to next round)
 	h.GameStateService.ResetAutoContinueTimer(h.Payload.GameID)
 
 	return nil

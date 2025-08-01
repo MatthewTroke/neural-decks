@@ -20,26 +20,34 @@ type GameEventRequest struct {
 }
 
 type GameEventPayloadGameBeginsRequest struct {
-	GameID string `json:"game_id"`
-	UserID string `json:"user_id"`
+	GameID string `json:"game_id" validate:"required"`
+	UserID string `json:"user_id" validate:"required"`
 }
 
 type GameEventPayloadJoinedGameRequest struct {
-	GameID string `json:"game_id"`
-	UserID string `json:"user_id"`
+	GameID string `json:"game_id" validate:"required"`
+	UserID string `json:"user_id" validate:"required"`
 }
 
 type GameEventPayloadGameRoundContinuedRequest struct {
-	GameID string `json:"game_id"`
-	UserID string `json:"user_id"`
+	GameID      string            `json:"game_id" validate:"required"`
+	UserID      string            `json:"user_id" validate:"required"`
+	PlayerCards map[string]string `json:"player_cards" validate:"required"`
+	BlackCardID string            `json:"black_card_id" validate:"required"`
 }
 
 type GameEventPayloadCardCzarChoseWinningCardRequest struct {
-	GameID string `json:"game_id"`
-	CardID string `json:"card_id"`
+	GameID string `json:"game_id" validate:"required"`
+	CardID string `json:"card_id" validate:"required"`
 }
 
 type GameEventPayloadPlayCardRequest struct {
-	GameID string `json:"game_id"`
-	CardID string `json:"card_id"`
+	GameID string `json:"game_id" validate:"required"`
+	CardID string `json:"card_id" validate:"required"`
+}
+
+type GameEventPayloadEmojiClickedRequest struct {
+	GameID string `json:"game_id" validate:"required"`
+	UserID string `json:"user_id" validate:"required"`
+	Emoji  string `json:"emoji" validate:"required"`
 }

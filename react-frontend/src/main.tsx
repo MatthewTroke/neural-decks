@@ -1,5 +1,6 @@
 import Game from "@/components/game/Game";
 import GameList from "@/components/gamelist/GameList.tsx";
+import { CreateGamePage } from "@/components/gamelist/CreateGamePage";
 import Login from "@/components/login/Login.tsx";
 import ProtectedRoute from "@/components/shared/ProtectedRoute.tsx";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -43,6 +44,16 @@ createRoot(document.getElementById("root")!).render(
               <ProtectedRoute>
                 <Navigation>
                   <GameList />
+                </Navigation>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/games/new"
+            element={
+              <ProtectedRoute>
+                <Navigation>
+                  <CreateGamePage />
                 </Navigation>
               </ProtectedRoute>
             }

@@ -76,8 +76,10 @@ export default function Players(props: {
                       <AvatarImage alt={player.name} />
                       <AvatarFallback>{player.name.at(0)}</AvatarFallback>
                     </Avatar>
-                    <span>{player.name}</span>
+                    <div className="flex flex-col">
+                    <p>{player.name}</p>
                     <PlayerBadge player={player} game={props.game} />
+                    </div>
                   </div>
                   <span>{player.score} pts</span>
                 </div>

@@ -66,6 +66,50 @@ func (s *GameStateService) RemoveGame(gameId string) {
 	delete(s.games, gameId)
 }
 
+// StopGameTimer stops the auto-continue timer for a game without removing it from memory
+func (s *GameStateService) StopGameTimer(gameId string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Stop timer for this game
+	if resetChan, exists := s.timerResets[gameId]; exists {
+		// Send a stop signal to the timer goroutine
+		select {
+		case resetChan <- false: // Use false as a stop signal
+		default:
+			// Channel is full, close it to force stop
+			close(resetChan)
+		}
+		delete(s.timerResets, gameId)
+		log.Printf("Stopped timer for game %s", gameId)
+	}
+}
+
+// CleanupGame removes the game from memory and stops any associated timers
+func (s *GameStateService) CleanupGame(gameId string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Remove game from memory
+	delete(s.games, gameId)
+
+	// Stop timer for this game
+	if resetChan, exists := s.timerResets[gameId]; exists {
+		close(resetChan)
+		delete(s.timerResets, gameId)
+		log.Printf("Cleaned up game %s and stopped timers", gameId)
+	}
+
+	// Clean up events from Redis (do this outside the lock to avoid blocking)
+	go func() {
+		if err := s.eventService.DeleteGameEvents(gameId); err != nil {
+			log.Printf("Failed to delete events for game %s: %v", gameId, err)
+		} else {
+			log.Printf("Cleaned up events for game %s", gameId)
+		}
+	}()
+}
+
 func (s *GameStateService) SetEventService(eventService *EventService) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -89,7 +133,6 @@ func (s *GameStateService) CreateAutoContinueTimer(game *domain.Game) {
 	go s.autoContinueGame(game.ID)
 }
 
-// ResetAutoContinueTimer resets the auto-continue timer for a game
 func (s *GameStateService) ResetAutoContinueTimer(gameID string) {
 	s.mu.RLock()
 	resetChan, exists := s.timerResets[gameID]
@@ -97,12 +140,22 @@ func (s *GameStateService) ResetAutoContinueTimer(gameID string) {
 
 	if exists {
 		select {
-		case resetChan <- true:
+		case resetChan <- true: // Send true as reset signal
 			log.Printf("Timer reset sent for game %s", gameID)
 		default:
 			// Channel is full, ignore
 		}
 	}
+
+	// Also update the clock for the game
+	game, err := s.eventService.GetGameById(gameID)
+	if err != nil {
+		log.Printf("Error getting game for clock update: %v", err)
+		return
+	}
+
+	// Update the clock to show when next auto-progress will happen
+	s.updateClock(game)
 }
 
 func (s *GameStateService) autoContinueGame(gameID string) {
@@ -112,11 +165,10 @@ func (s *GameStateService) autoContinueGame(gameID string) {
 	s.mu.RUnlock()
 
 	for {
-		// Wait exactly 30 seconds or until reset
 		select {
 		case <-time.After(30 * time.Second):
-			// 30 seconds passed, auto-progress
 			game, err := s.eventService.GetGameById(gameID)
+
 			if err != nil {
 				log.Printf("Game %s not found, stopping auto-continue", gameID)
 				return
@@ -130,15 +182,53 @@ func (s *GameStateService) autoContinueGame(gameID string) {
 			log.Printf("Auto-progressing game %s after 30 seconds", gameID)
 			s.autoProgress(game)
 
-		case <-resetChan:
+		case resetSignal := <-resetChan:
+			// Check if this is a stop signal
+			if !resetSignal {
+				log.Printf("Timer stop signal received for game %s, stopping auto-continue", gameID)
+				return
+			}
 			// Timer was reset by manual action
 			log.Printf("Timer reset for game %s, restarting 30-second countdown", gameID)
 		}
 	}
 }
 
-// autoProgress handles the automatic progression logic
+// updateClock sets the NextAutoProgressAt timestamp to 30 seconds in the future
+func (s *GameStateService) updateClock(game *domain.Game) {
+	nextAutoProgress := time.Now().Add(30 * time.Second)
+
+	// Create the clock update event
+	event, err := s.eventService.CreateGameEvent(
+		game.ID,
+		domain.EventClockUpdate,
+		domain.NewGameEventPayloadClockUpdate(game.ID, nextAutoProgress),
+	)
+
+	if err != nil {
+		log.Printf("Error creating clock update event: %v", err)
+		return
+	}
+
+	// Apply the event to the game state
+	if err := game.ApplyEvent(event); err != nil {
+		log.Printf("Error applying clock update event: %v", err)
+		return
+	}
+
+	// Persist the event
+	if err := s.eventService.AppendEvent(event); err != nil {
+		log.Printf("Error persisting clock update event: %v", err)
+		return
+	}
+
+	log.Printf("Updated clock for game %s, next auto-progress at: %s", game.ID, nextAutoProgress.Format(time.RFC3339))
+}
+
 func (s *GameStateService) autoProgress(game *domain.Game) {
+	// Update the clock to show when next auto-progress will happen
+	s.updateClock(game)
+
 	log.Printf("Auto-progressing game %s with round status: %s", game.ID, game.RoundStatus)
 
 	switch game.RoundStatus {
@@ -227,8 +317,67 @@ func (s *GameStateService) autoPickWinningCard(game *domain.Game) {
 		}
 
 		winner, err := game.FindWhiteCardOwner(winningCard)
+
 		if err == nil {
 			s.broadcastGameUpdate(game, fmt.Sprintf("Card czar chose a winning card! %s wins the round!", winner.Name))
+		}
+
+		// Check if anyone has won the game
+		var gameWinner *domain.Player
+		for _, player := range game.Players {
+			if player.Score >= game.WinnerCount {
+				gameWinner = player
+				break
+			}
+		}
+
+		if gameWinner != nil {
+			// Game is over, someone won! Create and apply game winner event
+			gameWinnerEvent, err := s.eventService.CreateGameEvent(
+				game.ID,
+				domain.EventGameWinner,
+				domain.NewGameEventPayloadGameWinner(game.ID, gameWinner.UserID, gameWinner.Score),
+			)
+
+			if err != nil {
+				log.Printf("Error creating game winner event: %v", err)
+				return
+			}
+
+			// Apply the game winner event to the game state
+			if err := game.ApplyEvent(gameWinnerEvent); err != nil {
+				log.Printf("Error applying game winner event: %v", err)
+				return
+			}
+
+			// Persist the game winner event
+			if err := s.eventService.AppendEvent(gameWinnerEvent); err != nil {
+				log.Printf("Error persisting game winner event: %v", err)
+				return
+			}
+
+			// Broadcast game winner message
+			message := domain.NewWebSocketMessage(domain.GameUpdate, game)
+			chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, fmt.Sprintf("🎉 %s has won the game with %d points! 🎉", gameWinner.Name, gameWinner.Score))
+
+			jsonMessage, err := json.Marshal(message)
+			if err == nil {
+				s.roomManager.GetRoom(game.ID).Broadcast(jsonMessage)
+			}
+
+			jsonChatMessage, err := json.Marshal(chatMessage)
+			if err == nil {
+				s.roomManager.GetRoom(game.ID).Broadcast(jsonChatMessage)
+			}
+
+			// Stop the timer immediately to prevent logging spam
+			s.StopGameTimer(game.ID)
+
+			// Schedule cleanup of the finished game after 30 seconds
+			go func() {
+				time.Sleep(30 * time.Second)
+				s.CleanupGame(game.ID)
+			}()
 		}
 	}
 }
@@ -237,6 +386,7 @@ func (s *GameStateService) autoPickWinningCard(game *domain.Game) {
 func (s *GameStateService) autoContinueRound(game *domain.Game) {
 	// Get used cards from Redis
 	usedCardIDs, err := s.eventService.GetUsedCards(game.ID)
+
 	if err != nil {
 		log.Printf("Error getting used cards: %v", err)
 		return
@@ -393,7 +543,6 @@ func (s *GameStateService) autoContinueRound(game *domain.Game) {
 	s.broadcastGameUpdate(game, "Round has continued.")
 }
 
-// broadcastGameUpdate sends game updates to all connected clients
 func (s *GameStateService) broadcastGameUpdate(game *domain.Game, chatMessage string) {
 	if s.roomManager == nil {
 		log.Printf("Warning: RoomManager not set, cannot broadcast updates")

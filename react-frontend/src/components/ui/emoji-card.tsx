@@ -8,6 +8,8 @@ interface EmojiCardProps {
   className?: string;
   emojis?: string[];
   title?: string;
+  handleEmojiClick: (emoji: string) => void;
+  scrollingEmojis: Array<{id: string, emoji: string, timestamp: number, rightOffset: number}>;
 }
 
 const DEFAULT_EMOJIS = [
@@ -16,32 +18,16 @@ const DEFAULT_EMOJIS = [
 
 export function EmojiCard({
   className,
-  emojis = DEFAULT_EMOJIS,
-  title = "Click an emoji!"
+  handleEmojiClick,
+  scrollingEmojis,
 }: EmojiCardProps) {
-  const [scrollingEmojis, setScrollingEmojis] = React.useState<Array<{id: string, emoji: string, timestamp: number, rightOffset: number}>>([]);
 
-  const handleEmojiClick = (emoji: string) => {
-    const newEmoji = {
-      id: `${Date.now()}-${Math.random()}`,
-      emoji,
-      timestamp: Date.now(),
-      rightOffset: Math.random() * 50 + 10 // Random offset between 10-60px from right
-    };
-    
-    setScrollingEmojis(prev => [...prev, newEmoji]);
-
-    // Remove emoji after animation completes
-    setTimeout(() => {
-      setScrollingEmojis(prev => prev.filter(e => e.id !== newEmoji.id));
-    }, 3000);
-  };
 
   return (
     <>
       <Card variant="ghost" className="h-full flex flex-col p-0 flex-0">
         <CardContent className="flex-1 p-0">
-          {emojis.slice(0, 32).map((emoji, index) => (
+          {DEFAULT_EMOJIS.slice(0, 32).map((emoji, index) => (
             <button
               key={index}
               onClick={() => handleEmojiClick(emoji)}

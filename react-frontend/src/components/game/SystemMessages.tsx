@@ -45,7 +45,7 @@ export default function SystemMessages(props: { chatMessages: any[] }) {
         <CardContent className="flex-1 p-0">
           <ScrollArea
             ref={scrollAreaRef}
-            className="h-full max-h-64 min-h-64 p-4"
+            className="h-full max-h-32 min-h-32 p-4"
           >
             <div className="space-y-4 flex flex-col">
               {props.chatMessages.map((chat, i) => (

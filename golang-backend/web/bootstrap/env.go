@@ -23,6 +23,10 @@ type Env struct {
 	RedisPort                string `mapstructure:"REDIS_PORT"`
 	RedisPassword            string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB                  int    `mapstructure:"REDIS_DB"`
+	LocalDevBypass           bool   `mapstructure:"LOCAL_DEV_BYPASS"`
+	LocalDevUserID           string `mapstructure:"LOCAL_DEV_USER_ID"`
+	LocalDevUserName         string `mapstructure:"LOCAL_DEV_USER_NAME"`
+	LocalDevUserEmail        string `mapstructure:"LOCAL_DEV_USER_EMAIL"`
 }
 
 func NewEnv() *Env {
@@ -61,6 +65,17 @@ func NewEnv() *Env {
 
 	if env.AppEnv == "development" {
 		log.Println("The App is running in development env")
+	}
+
+	// Set defaults for local development bypass
+	if env.LocalDevUserID == "" {
+		env.LocalDevUserID = "local-dev-user"
+	}
+	if env.LocalDevUserName == "" {
+		env.LocalDevUserName = "Local Developer"
+	}
+	if env.LocalDevUserEmail == "" {
+		env.LocalDevUserEmail = "dev@localhost"
 	}
 
 	return &env

@@ -37,6 +37,67 @@ type AuthController struct {
 }
 
 func (ac *AuthController) HandleBeginGoogleOAuthLogin(c *fiber.Ctx) error {
+	// Check if we're in local development and bypass is enabled
+	if ac.Env.AppEnv == "development" && ac.Env.LocalDevBypass {
+		log.Printf("🔧 [LOCAL_DEV] Bypassing Google OAuth for local development")
+
+		// Create local dev user
+		localDevUser := &domain.User{
+			ID:            ac.Env.LocalDevUserID,
+			Name:          ac.Env.LocalDevUserName,
+			Email:         ac.Env.LocalDevUserEmail,
+			EmailVerified: true,
+			Provider:      "local-dev",
+			Image:         "https://via.placeholder.com/150/4CAF50/FFFFFF?text=DEV",
+		}
+
+		// Upsert user to database
+		result, err := ac.UserRepository.UpsertUserByID(localDevUser)
+		if err != nil {
+			log.Printf("⚠️ [LOCAL_DEV] Failed to upsert local dev user: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to create local dev user",
+			})
+		}
+
+		// Create access token
+		accessToken, err := ac.JWTAuthService.CreateAccessToken(
+			result.Name,
+			result.Email,
+			result.ID,
+			result.Image,
+			result.EmailVerified,
+		)
+		if err != nil {
+			log.Printf("❌ [LOCAL_DEV] Failed to create access token: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to create local dev token",
+			})
+		}
+
+		// Create refresh token
+		refreshToken, err := ac.JWTAuthService.CreateRefreshToken(result.ID)
+		if err != nil {
+			log.Printf("⚠️ [LOCAL_DEV] Failed to create refresh token: %v", err)
+		}
+
+		// Set tokens in cookies
+		ac.JWTAuthService.HandleSetAccessTokenInCookie(c, accessToken)
+		if refreshToken != "" {
+			ac.JWTAuthService.HandleSetRefreshTokenInCookie(c, refreshToken)
+		}
+
+		log.Printf("✅ [LOCAL_DEV] Local dev user authenticated: %s (%s)", result.Name, result.Email)
+
+		res := response.BeginAuthLoginProcess{
+			RedirectURL: "http://localhost:5173/games",
+		}
+
+		// Redirect to games page
+		return c.JSON(res)
+	}
+
+	// Regular OAuth flow for production/development without bypass
 	state := uuid.New().String()
 
 	googleClientID := ac.Env.GoogleOAuthClientID

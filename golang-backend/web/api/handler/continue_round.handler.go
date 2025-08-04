@@ -1,8 +1,11 @@
 package handler
 
 import (
-	"cardgame/domain"
-	"cardgame/request"
+	"cardgame/internal/domain/aggregates"
+	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/request"
 	"cardgame/services"
 	"encoding/json"
 	"fmt"
@@ -19,11 +22,11 @@ type ContinueRoundHandler struct {
 	Payload          request.GameEventPayloadGameRoundContinuedRequest
 	EventService     *services.EventService
 	GameStateService *services.GameStateService
-	Claim            *domain.CustomClaim
-	Hub              *domain.Hub
+	Claim            *entities.CustomClaim
+	Hub              *websockets.Hub
 }
 
-func NewContinueRoundHandler(payload request.GameEventPayloadGameRoundContinuedRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *ContinueRoundHandler {
+func NewContinueRoundHandler(payload request.GameEventPayloadGameRoundContinuedRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *entities.CustomClaim, hub *websockets.Hub) *ContinueRoundHandler {
 	return &ContinueRoundHandler{
 		Payload:          payload,
 		EventService:     eventService,
@@ -37,13 +40,13 @@ func (h *ContinueRoundHandler) Validate() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
+		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", aggregates.ContinueRound, err)
 	}
 
 	_, err = game.FindPlayerByUserId(h.Claim.UserID)
 
 	if err != nil {
-		return fmt.Errorf("%s validation failed, could not find player by user id: %w", domain.ContinueRound, err)
+		return fmt.Errorf("%s validation failed, could not find player by user id: %w", aggregates.ContinueRound, err)
 	}
 
 	return nil
@@ -53,7 +56,7 @@ func (h *ContinueRoundHandler) Handle() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event: %w", domain.BeginGame, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", aggregates.BeginGame, err)
 	}
 
 	// Get used cards from Redis for checking
@@ -94,15 +97,15 @@ func (h *ContinueRoundHandler) Handle() error {
 		// Create shuffle event
 		shuffleEvent, err := h.EventService.CreateGameEvent(
 			h.Payload.GameID,
-			domain.EventShuffle,
-			domain.NewGameEventPayloadShuffle(h.Payload.GameID, time.Now().UnixNano(), uuid.New().String()),
+			events.EventShuffle,
+			aggregates.NewGameEventPayloadShuffle(h.Payload.GameID, time.Now().UnixNano(), uuid.New().String()),
 		)
 
 		if err != nil {
 			return fmt.Errorf("failed to create shuffle event: %w", err)
 		}
 
-		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "No more available white cards. Re-shuffling deck...")
+		chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, "No more available white cards. Re-shuffling deck...")
 
 		jsonChatMessage, err := json.Marshal(chatMessage)
 
@@ -169,15 +172,15 @@ func (h *ContinueRoundHandler) Handle() error {
 		// Create shuffle event
 		shuffleEvent, err := h.EventService.CreateGameEvent(
 			h.Payload.GameID,
-			domain.EventShuffle,
-			domain.NewGameEventPayloadShuffle(h.Payload.GameID, time.Now().UnixNano(), uuid.New().String()),
+			events.EventShuffle,
+			aggregates.NewGameEventPayloadShuffle(h.Payload.GameID, time.Now().UnixNano(), uuid.New().String()),
 		)
 
 		if err != nil {
 			return fmt.Errorf("failed to create shuffle event: %w", err)
 		}
 
-		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "No more available black cards. Re-shuffling deck...")
+		chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, "No more available black cards. Re-shuffling deck...")
 
 		jsonChatMessage, err := json.Marshal(chatMessage)
 
@@ -218,8 +221,8 @@ func (h *ContinueRoundHandler) Handle() error {
 	// Create event with the specific cards for each player
 	event, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventRoundContinued,
-		domain.NewGameEventPayloadGameRoundContinuedWithCards(h.Payload.GameID, h.Payload.UserID, playerCards, blackCardID),
+		events.EventRoundContinued,
+		aggregates.NewGameEventPayloadGameRoundContinuedWithCards(h.Payload.GameID, h.Payload.UserID, playerCards, blackCardID),
 	)
 
 	if err != nil {
@@ -241,8 +244,8 @@ func (h *ContinueRoundHandler) Handle() error {
 		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
-	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Round has continued.")
+	message := websockets.NewWebSocketMessage(aggregates.GameUpdate, newGame)
+	chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, "Round has continued.")
 
 	jsonMessage, err := json.Marshal(message)
 

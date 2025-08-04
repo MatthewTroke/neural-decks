@@ -4,9 +4,9 @@ import (
 	"cardgame/api/controller"
 	"cardgame/api/middleware"
 	"cardgame/bootstrap"
-	"cardgame/domain"
-	"cardgame/repository"
-	"cardgame/response"
+	"cardgame/internal/infra/repositories"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/response"
 	"cardgame/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,24 +17,17 @@ import (
 
 func NewGameRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group fiber.Router) {
 	gameStateService := services.NewGameStateService(nil)
-	eventService := services.NewEventService(repository.NewRedisEventRepository(redis), gameStateService)
+	eventService := services.NewEventService(repositories.NewRedisEventRepository(redis), gameStateService)
 	// Set EventService on GameStateService to complete the circular dependency
 	gameStateService.SetEventService(eventService)
 
 	// Create room manager for WebSocket broadcasting
-	roomManager := domain.NewRoomManager()
+	roomManager := websockets.NewRoomManager()
 
 	// Set the room manager on the game state service for broadcasting
 	gameStateService.SetRoomManager(roomManager)
 
-	gc := &controller.GameController{
-		GameService:      gameStateService,
-		EventService:     eventService,
-		GameStateService: gameStateService,
-		RoomManager:      roomManager,
-		ChatGPTService:   services.NewChatGPTService(env),
-		Env:              env,
-	}
+	gc := controller.NewGameController(env, eventService, gameStateService, roomManager)
 
 	group.Get("/ws/game/:id",
 		middleware.RequireAuth(gc.Env, db),

@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"cardgame/bootstrap"
-	"cardgame/repository"
+	"cardgame/internal/infra/repositories"
 	"cardgame/services"
 	"log"
 	"time"
@@ -26,8 +26,8 @@ func RequireAuth(env *bootstrap.Env, db *gorm.DB) fiber.Handler {
 
 		// Create JWT service with user repository and refresh token repository
 		jwtService := services.NewJWTAuthService(env)
-		userRepo := repository.NewSQLUserRepository(db)
-		refreshTokenRepo := repository.NewSQLRefreshTokenRepository(db)
+		userRepo := repositories.NewSQLUserRepository(db)
+		refreshTokenRepo := repositories.NewSQLRefreshTokenRepository(db)
 		jwtService.SetUserRepository(userRepo)
 		jwtService.SetRefreshTokenRepository(refreshTokenRepo)
 

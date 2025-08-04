@@ -1,8 +1,11 @@
 package handler
 
 import (
-	"cardgame/domain"
-	"cardgame/request"
+	"cardgame/internal/domain/aggregates"
+	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/request"
 	"cardgame/services"
 	"encoding/json"
 	"fmt"
@@ -24,11 +27,11 @@ type BeginGameHandler struct {
 	Payload          request.GameEventPayloadGameBeginsRequest
 	EventService     *services.EventService
 	GameStateService *services.GameStateService
-	Claim            *domain.CustomClaim
-	Hub              *domain.Hub
+	Claim            *entities.CustomClaim
+	Hub              *websockets.Hub
 }
 
-func NewBeginGameHandler(payload request.GameEventPayloadGameBeginsRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *BeginGameHandler {
+func NewBeginGameHandler(payload request.GameEventPayloadGameBeginsRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *entities.CustomClaim, hub *websockets.Hub) *BeginGameHandler {
 	return &BeginGameHandler{
 		Payload:          payload,
 		EventService:     eventService,
@@ -42,7 +45,7 @@ func (h *BeginGameHandler) Validate() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to validate inbound %s event: %w", domain.BeginGame, err)
+		return fmt.Errorf("unable to validate inbound %s event: %w", aggregates.BeginGame, err)
 	}
 
 	if game.Players == nil {
@@ -60,14 +63,14 @@ func (h *BeginGameHandler) Handle() error {
 	currentGame, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event: %w", domain.BeginGame, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", aggregates.BeginGame, err)
 	}
 
 	// 1. Create the game begins event (sets up game state)
 	gameBeginsEvent, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventGameBegins,
-		domain.NewGameEventPayloadGameBegins(h.Payload.GameID, h.Payload.UserID),
+		events.EventGameBegins,
+		aggregates.NewGameEventPayloadGameBegins(h.Payload.GameID, h.Payload.UserID),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create game begins event: %w", err)
@@ -83,8 +86,8 @@ func (h *BeginGameHandler) Handle() error {
 	// Set the first player as card czar
 	setCardCzarEvent, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventSetCardCzar,
-		domain.NewGameEventPayloadSetCardCzar(h.Payload.GameID, game.Players[0].UserID),
+		events.EventSetCardCzar,
+		aggregates.NewGameEventPayloadSetCardCzar(h.Payload.GameID, game.Players[0].UserID),
 	)
 
 	if err != nil {
@@ -107,8 +110,8 @@ func (h *BeginGameHandler) Handle() error {
 
 	shuffleEvent, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventShuffle,
-		domain.NewGameEventPayloadShuffle(h.Payload.GameID, shuffleSeed, fmt.Sprintf("shuffle_%d", shuffleSeed)),
+		events.EventShuffle,
+		aggregates.NewGameEventPayloadShuffle(h.Payload.GameID, shuffleSeed, fmt.Sprintf("shuffle_%d", shuffleSeed)),
 	)
 
 	if err != nil {
@@ -140,7 +143,7 @@ func (h *BeginGameHandler) Handle() error {
 
 	for _, player := range game.Players {
 		// Find 7 white cards in the collection that haven't been used yet
-		whiteCards := []*domain.Card{}
+		whiteCards := []*entities.Card{}
 		for _, card := range game.Collection.Cards {
 			if card.Type == "White" && len(whiteCards) < 7 && !usedCardsMap[card.ID] {
 				whiteCards = append(whiteCards, card)
@@ -158,8 +161,8 @@ func (h *BeginGameHandler) Handle() error {
 		// Create deal cards event
 		dealEvent, err := h.EventService.CreateGameEvent(
 			h.Payload.GameID,
-			domain.EventDealCards,
-			domain.NewGameEventPayloadDealCards(h.Payload.GameID, player.UserID, cardIDs),
+			events.EventDealCards,
+			aggregates.NewGameEventPayloadDealCards(h.Payload.GameID, player.UserID, cardIDs),
 		)
 
 		if err != nil {
@@ -178,7 +181,7 @@ func (h *BeginGameHandler) Handle() error {
 	}
 
 	// 4. Draw black card with specific card ID
-	blackCards := []*domain.Card{}
+	blackCards := []*entities.Card{}
 	for _, card := range game.Collection.Cards {
 		if card.Type == "Black" && len(blackCards) < 1 && !usedCardsMap[card.ID] {
 			blackCards = append(blackCards, card)
@@ -190,8 +193,8 @@ func (h *BeginGameHandler) Handle() error {
 	if len(blackCards) > 0 {
 		blackCardEvent, err := h.EventService.CreateGameEvent(
 			h.Payload.GameID,
-			domain.EventDrawBlackCard,
-			domain.NewGameEventPayloadDrawBlackCard(h.Payload.GameID, blackCards[0].ID),
+			events.EventDrawBlackCard,
+			aggregates.NewGameEventPayloadDrawBlackCard(h.Payload.GameID, blackCards[0].ID),
 		)
 
 		if err != nil {
@@ -224,8 +227,8 @@ func (h *BeginGameHandler) Handle() error {
 		return fmt.Errorf("failed to persist game begins event: %w", err)
 	}
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, game)
-	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Game has begun.")
+	message := domain.NewWebSocketMessage(aggregates.GameUpdate, game)
+	chatMessage := domain.NewWebSocketMessage(aggregates.ChatMessage, "Game has begun.")
 
 	jsonMessage, err := json.Marshal(message)
 

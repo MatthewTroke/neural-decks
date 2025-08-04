@@ -1,8 +1,11 @@
 package handler
 
 import (
-	"cardgame/domain"
-	"cardgame/request"
+	"cardgame/internal/domain/aggregates"
+	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/request"
 	"cardgame/services"
 	"encoding/json"
 	"fmt"
@@ -12,11 +15,11 @@ type EmojiClickedHandler struct {
 	Payload          request.GameEventPayloadEmojiClickedRequest
 	EventService     *services.EventService
 	GameStateService *services.GameStateService
-	Claim            *domain.CustomClaim
-	Hub              *domain.Hub
+	Claim            *entities.CustomClaim
+	Hub              *websockets.Hub
 }
 
-func NewEmojiClickedHandler(payload request.GameEventPayloadEmojiClickedRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *EmojiClickedHandler {
+func NewEmojiClickedHandler(payload request.GameEventPayloadEmojiClickedRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *entities.CustomClaim, hub *websockets.Hub) *EmojiClickedHandler {
 	return &EmojiClickedHandler{
 		Payload:          payload,
 		EventService:     eventService,
@@ -30,7 +33,7 @@ func (h *EmojiClickedHandler) Validate() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to validate inbound %s event: %w", domain.EventEmojiClicked, err)
+		return fmt.Errorf("unable to validate inbound %s event: %w", events.EventEmojiClicked, err)
 	}
 
 	// Check if the user is a player in the game
@@ -48,7 +51,7 @@ func (h *EmojiClickedHandler) Validate() error {
 }
 
 func (h *EmojiClickedHandler) Handle() error {
-	message := domain.NewWebSocketMessage(domain.EmojiClickedMessage, map[string]interface{}{
+	message := websockets.NewWebSocketMessage(aggregates.EmojiClickedMessage, map[string]interface{}{
 		"user_id": h.Payload.UserID,
 		"emoji":   h.Payload.Emoji,
 		"game_id": h.Payload.GameID,

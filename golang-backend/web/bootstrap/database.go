@@ -1,7 +1,7 @@
 package bootstrap
 
 import (
-	"cardgame/domain"
+	"cardgame/internal/domain/entities"
 	"fmt"
 	"sync"
 
@@ -30,12 +30,12 @@ func NewDatabaseInstance(env *Env) *gorm.DB {
 			return
 		}
 
-		db.Migrator().DropTable(&domain.User{})
-		db.Migrator().DropTable(&domain.RefreshToken{})
+		db.Migrator().DropTable(&entities.User{})
+		db.Migrator().DropTable(&entities.RefreshToken{})
 
 		err = db.AutoMigrate(
-			&domain.User{},
-			&domain.RefreshToken{},
+			&entities.User{},
+			&entities.RefreshToken{},
 		)
 
 		if err != nil {

@@ -13,8 +13,8 @@ Neural Decks implements an **Event Sourcing** pattern with **CQRS (Command Query
 │   Frontend      │    │   WebSocket      │    │   Controller    │    │   Handler       │
 │   (React)       │───▶│   Connection     │───▶│   (Game)        │───▶│   (Specific)    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘    └─────────────────┘
-                                                         │
-                                                         ▼
+                                                                              │
+                                                                              ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Redis         │◀───│   Event Service  │◀───│   Game State    │◀───│   Game Domain   │
 │   (Event Store) │    │                  │    │   Service       │    │   (ApplyEvent)  │

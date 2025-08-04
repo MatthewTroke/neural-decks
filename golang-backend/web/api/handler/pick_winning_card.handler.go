@@ -1,8 +1,12 @@
 package handler
 
 import (
-	"cardgame/domain"
-	"cardgame/request"
+	"cardgame/internal/domain/aggregates"
+	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
+	"cardgame/internal/domain/valueobjects"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/request"
 	"cardgame/services"
 	"encoding/json"
 	"errors"
@@ -19,8 +23,8 @@ type PickWinningCardHandler struct {
 	Payload          request.GameEventPayloadCardCzarChoseWinningCardRequest
 	EventService     *services.EventService
 	GameStateService *services.GameStateService
-	Claim            *domain.CustomClaim
-	Hub              *domain.Hub
+	Claim            *entities.CustomClaim
+	Hub              *websockets.Hub
 }
 
 type InvalidUserActionError struct {
@@ -36,7 +40,7 @@ func (e *InvalidUserActionError) Error() string {
 	return e.Message
 }
 
-func NewPickWinningCardHandler(payload request.GameEventPayloadCardCzarChoseWinningCardRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *PickWinningCardHandler {
+func NewPickWinningCardHandler(payload request.GameEventPayloadCardCzarChoseWinningCardRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *entities.CustomClaim, hub *websockets.Hub) *PickWinningCardHandler {
 	return &PickWinningCardHandler{
 		Payload:          payload,
 		EventService:     eventService,
@@ -50,31 +54,31 @@ func (h *PickWinningCardHandler) Validate() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", aggregates.PickWinningCard, err)
 	}
 
-	if game.Status != domain.InProgress {
-		return fmt.Errorf("unable to handle inbound %s event, game status is not InProgress", domain.PickWinningCard)
+	if game.Status != valueobjects.InProgress {
+		return fmt.Errorf("unable to handle inbound %s event, game status is not InProgress", aggregates.PickWinningCard)
 	}
 
-	if game.RoundStatus != domain.CardCzarPickingWinningCard {
-		return fmt.Errorf("unable to handle inbound %s event, round status is not in CardCzarPickingWinningCard", domain.PickWinningCard)
+	if game.RoundStatus != valueobjects.CardCzarPickingWinningCard {
+		return fmt.Errorf("unable to handle inbound %s event, round status is not in CardCzarPickingWinningCard", aggregates.PickWinningCard)
 	}
 
 	hasPlayersPlayedWhiteCard, err := game.HasAllPlayersPlayedWhiteCard()
 
 	if err != nil {
-		return fmt.Errorf("unable to handle %s event: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle %s event: %w", aggregates.PickWinningCard, err)
 	}
 
 	if !hasPlayersPlayedWhiteCard {
-		return fmt.Errorf("unable to handle inbound %s event, not all players have played a white card", domain.PickWinningCard)
+		return fmt.Errorf("unable to handle inbound %s event, not all players have played a white card", aggregates.PickWinningCard)
 	}
 
 	player, err := game.FindPlayerByUserId(h.Claim.UserID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event, unable to find player with given user id: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event, unable to find player with given user id: %w", aggregates.PickWinningCard, err)
 	}
 
 	if !player.IsCardCzar {
@@ -87,13 +91,13 @@ func (h *PickWinningCardHandler) Validate() error {
 	winningCard, err := game.FindWhiteCardByCardId(h.Payload.CardID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event, unable to find winning card: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event, unable to find winning card: %w", aggregates.PickWinningCard, err)
 	}
 
 	_, err = game.FindWhiteCardOwner(winningCard)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event, unable to find winning card owner: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event, unable to find winning card owner: %w", aggregates.PickWinningCard, err)
 	}
 
 	return nil
@@ -103,13 +107,13 @@ func (h *PickWinningCardHandler) Handle() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event: %w", domain.PickWinningCard, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", aggregates.PickWinningCard, err)
 	}
 
 	event, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventCardCzarChoseWinningCard,
-		domain.NewGameEventPayloadCardCzarChoseWinningCard(h.Payload.GameID, h.Payload.CardID),
+		events.EventCardCzarChoseWinningCard,
+		aggregates.NewGameEventPayloadCardCzarChoseWinningCard(h.Payload.GameID, h.Payload.CardID),
 	)
 
 	if err != nil {
@@ -132,8 +136,8 @@ func (h *PickWinningCardHandler) Handle() error {
 		// Game is over, someone won! Create and apply game winner event
 		gameWinnerEvent, err := h.EventService.CreateGameEvent(
 			h.Payload.GameID,
-			domain.EventGameWinner,
-			domain.NewGameEventPayloadGameWinner(h.Payload.GameID, winner.UserID, winner.Score),
+			events.EventGameWinner,
+			aggregates.NewGameEventPayloadGameWinner(h.Payload.GameID, winner.UserID, winner.Score),
 		)
 
 		if err != nil {
@@ -150,8 +154,8 @@ func (h *PickWinningCardHandler) Handle() error {
 			return fmt.Errorf("failed to persist game winner event: %w", err)
 		}
 
-		message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
-		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, fmt.Sprintf("🎉 %s has won the game with %d points! 🎉", winner.Name, winner.Score))
+		message := websockets.NewWebSocketMessage(aggregates.GameUpdate, newGame)
+		chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, fmt.Sprintf("🎉 %s has won the game with %d points! 🎉", winner.Name, winner.Score))
 
 		jsonMessage, err := json.Marshal(message)
 		if err != nil {
@@ -176,8 +180,8 @@ func (h *PickWinningCardHandler) Handle() error {
 		}()
 	} else {
 		// Normal round continuation
-		message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
-		chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, "Card czar has chosen a winning card.")
+		message := websockets.NewWebSocketMessage(aggregates.GameUpdate, newGame)
+		chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, "Card czar has chosen a winning card.")
 
 		jsonMessage, err := json.Marshal(message)
 		if err != nil {

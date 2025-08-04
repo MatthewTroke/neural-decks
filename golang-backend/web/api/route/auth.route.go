@@ -1,11 +1,11 @@
 package route
 
 import (
-	"cardgame/api/controller"
 	"cardgame/api/middleware"
 	"cardgame/bootstrap"
 	"cardgame/config"
-	"cardgame/repository"
+	"cardgame/internal/infra/repositories"
+	controller "cardgame/internal/interfaces/http/controllers"
 	"cardgame/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,8 +14,8 @@ import (
 )
 
 func NewAuthRouter(env *bootstrap.Env, db *gorm.DB, redis *redis.Client, group fiber.Router) {
-	userRepo := repository.NewSQLUserRepository(db)
-	refreshTokenRepo := repository.NewSQLRefreshTokenRepository(db)
+	userRepo := repositories.NewSQLUserRepository(db)
+	refreshTokenRepo := repositories.NewSQLRefreshTokenRepository(db)
 	jwtService := services.NewJWTAuthService(env)
 	jwtService.SetUserRepository(userRepo)
 	jwtService.SetRefreshTokenRepository(refreshTokenRepo)

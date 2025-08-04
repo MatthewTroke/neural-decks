@@ -1,8 +1,11 @@
 package handler
 
 import (
-	"cardgame/domain"
-	"cardgame/request"
+	"cardgame/internal/domain/aggregates"
+	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
+	"cardgame/internal/infra/websockets"
+	"cardgame/internal/interfaces/http/request"
 	"cardgame/services"
 	"encoding/json"
 	"fmt"
@@ -17,11 +20,11 @@ type JoinGameHandler struct {
 	Payload          request.GameEventPayloadJoinedGameRequest
 	EventService     *services.EventService
 	GameStateService *services.GameStateService
-	Claim            *domain.CustomClaim
-	Hub              *domain.Hub
+	Claim            *entities.CustomClaim
+	Hub              *websockets.Hub
 }
 
-func NewJoinGameHandler(payload request.GameEventPayloadJoinedGameRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *domain.CustomClaim, hub *domain.Hub) *JoinGameHandler {
+func NewJoinGameHandler(payload request.GameEventPayloadJoinedGameRequest, eventService *services.EventService, gameStateService *services.GameStateService, claim *entities.CustomClaim, hub *websockets.Hub) *JoinGameHandler {
 	return &JoinGameHandler{
 		Payload:          payload,
 		EventService:     eventService,
@@ -35,7 +38,7 @@ func (h *JoinGameHandler) Validate() error {
 	game, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
+		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", aggregates.ContinueRound, err)
 	}
 
 	if len(game.Players) >= game.MaxPlayerCount {
@@ -55,13 +58,13 @@ func (h *JoinGameHandler) Handle() error {
 	currentGame, err := h.EventService.BuildGameByGameId(h.Payload.GameID)
 
 	if err != nil {
-		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", domain.ContinueRound, err)
+		return fmt.Errorf("%s validation failed, could not find game by payload's game id: %w", aggregates.ContinueRound, err)
 	}
 
 	event, err := h.EventService.CreateGameEvent(
 		h.Payload.GameID,
-		domain.EventJoinedGame,
-		domain.NewGameEventPayloadJoinedGame(h.Payload.GameID, h.Payload.UserID, h.Claim),
+		events.EventJoinedGame,
+		aggregates.NewGameEventPayloadJoinedGame(h.Payload.GameID, h.Payload.UserID, h.Claim),
 	)
 
 	if err != nil {
@@ -80,13 +83,13 @@ func (h *JoinGameHandler) Handle() error {
 
 	log := fmt.Sprintf("%s has joined the game.", h.Claim.Name)
 
-	message := domain.NewWebSocketMessage(domain.GameUpdate, newGame)
-	chatMessage := domain.NewWebSocketMessage(domain.ChatMessage, log)
+	message := websockets.NewWebSocketMessage(aggregates.GameUpdate, newGame)
+	chatMessage := websockets.NewWebSocketMessage(aggregates.ChatMessage, log)
 
 	jsonMessage, err := json.Marshal(message)
 
 	if err != nil {
-		return fmt.Errorf("unable to handle inbound %s event: %w", domain.JoinGame, err)
+		return fmt.Errorf("unable to handle inbound %s event: %w", aggregates.JoinGame, err)
 	}
 
 	jsonChatMessage, err := json.Marshal(chatMessage)

@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/http"
+  bin = "tmp/main.exe"
+  cmd = "go build -o ./tmp/main.exe ./cmd/main.go"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -19,11 +19,13 @@ tmp_dir = "tmp"
   kill_delay = "0s"
   log = "build-errors.log"
   poll = true
-  poll_interval = 1000
+  poll_interval = 100
+  post_cmd = []
+  pre_cmd = []
   rerun = false
   rerun_delay = 500
   send_interrupt = false
-  stop_on_root = false
+  stop_on_error = false
 
 [color]
   app = ""
@@ -34,15 +36,17 @@ tmp_dir = "tmp"
 
 [log]
   main_only = false
+  silent = false
   time = false
 
 [misc]
   clean_on_exit = false
 
+[proxy]
+  app_port = 0
+  enabled = false
+  proxy_port = 0
+
 [screen]
   clear_on_rebuild = false
   keep_scroll = true
-
-[watcher]
-  poll = true
-  poll_interval = 1000 

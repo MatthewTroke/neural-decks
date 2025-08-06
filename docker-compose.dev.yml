@@ -13,6 +13,7 @@ services:
       - REDIS_DB=0
       - REDIS_PASSWORD=
       - REDIS_URL=redis://redis:6379
+      - DATABASE_DSN=postgresql://postgres:password@neural-decks-postgres-dev:5432/neural_decks
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
@@ -63,7 +64,6 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=neural_decks
-      - DATABASE_DSN=postgresql://postgres:password@neural-decks-postgres-dev:5432/neural_decks
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     restart: unless-stopped

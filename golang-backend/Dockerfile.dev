@@ -8,13 +8,16 @@ RUN apk add --no-cache git ca-certificates && \
 WORKDIR /app
 
 # Copy go mod files
-COPY web/go.mod web/go.sum ./
+COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
 
 # Copy air configuration
 COPY .air.toml ./
+
+# Copy source code
+COPY . .
 
 # Create logs directory
 RUN mkdir -p logs

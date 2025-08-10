@@ -10,7 +10,7 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/golang-backend/cmd/http/main.go",
+            "program": "${workspaceFolder}/golang-backend/cmd/http/server.go",
             "cwd": "${workspaceFolder}/golang-backend",
             "envFile": "${workspaceFolder}/golang-backend/.env",
             "args": []

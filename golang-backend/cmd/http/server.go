@@ -72,6 +72,12 @@ func main() {
 	gameRedisRepository := infra.NewRedisGameRepository(redis)
 	eventRepository := infra.NewRedisEventRepository(redis)
 
+	games, err := gameRedisRepository.GetAllGames()
+
+	if err != nil {
+		log.Fatalf("failed to get all games: %v", err)
+	}
+
 	// Services
 	deckCreationService := services.NewChatGPTService(env.ChatGPTAPIKey)
 	jwtService := services.NewJWTAuthService(refreshTokenSqlRepository)
@@ -83,6 +89,7 @@ func main() {
 		eventRepository,
 		deckCreationService,
 		publisher,
+		games,
 	)
 
 	// Configs

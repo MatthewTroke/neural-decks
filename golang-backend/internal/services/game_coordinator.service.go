@@ -3,6 +3,7 @@ package services
 import (
 	"cardgame/internal/domain/aggregates"
 	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
 	"cardgame/internal/domain/repositories"
 	"cardgame/internal/domain/services"
 	"cardgame/internal/domain/valueobjects"
@@ -22,6 +23,7 @@ type GameCoordinator struct {
 	eventRepository     repositories.EventRepository
 	deckCreationService services.DeckCreationService
 	publisher           Publisher
+	games               []*aggregates.Game
 }
 
 func NewGameCoordinator(
@@ -29,13 +31,25 @@ func NewGameCoordinator(
 	eventRepository repositories.EventRepository,
 	deckCreationService services.DeckCreationService,
 	publisher Publisher,
+	games []*aggregates.Game,
 ) *GameCoordinator {
 	return &GameCoordinator{
 		gameRepository:      gameRepository,
 		eventRepository:     eventRepository,
 		deckCreationService: deckCreationService,
 		publisher:           publisher,
+		games:               games,
 	}
+}
+
+func (gc *GameCoordinator) getGameByID(gameId string) *aggregates.Game {
+	for _, game := range gc.games {
+		if game.ID == gameId {
+			return game
+		}
+	}
+
+	return nil
 }
 
 func (gc *GameCoordinator) Create(name string, deckSubject string, winnerCount int, maxPlayerCount int, claim *entities.CustomClaim) (*aggregates.Game, error) {
@@ -46,6 +60,8 @@ func (gc *GameCoordinator) Create(name string, deckSubject string, winnerCount i
 	}
 
 	player, err := aggregates.NewPlayer(claim)
+
+	player.SetIsOwner(true)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create player: %w", err)
@@ -66,6 +82,7 @@ func (gc *GameCoordinator) Create(name string, deckSubject string, winnerCount i
 		valueobjects.Setup,
 		players,
 		[]*entities.Card{},
+		[]*entities.Card{},
 		nil,
 		valueobjects.Waiting,
 		0,
@@ -80,6 +97,8 @@ func (gc *GameCoordinator) Create(name string, deckSubject string, winnerCount i
 
 	game, err = gc.gameRepository.Create(game)
 
+	gc.games = append(gc.games, game)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create game: %w", err)
 	}
@@ -88,35 +107,23 @@ func (gc *GameCoordinator) Create(name string, deckSubject string, winnerCount i
 }
 
 func (gc *GameCoordinator) Join(gameId string, claim *entities.CustomClaim) (*aggregates.Game, error) {
-	game, err := gc.gameRepository.GetByID(gameId)
+	// validationResult := gc.gameValidator.ValidateJoinGame(game, gameId, claim.UserID)
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to get game: %w", err)
+	// if !validationResult.IsValid {
+	// 	return nil, fmt.Errorf("failed to validate join game: %w", validationResult.Errors)
+	// }
+
+	game := gc.getGameByID(gameId)
+
+	if game == nil {
+		return nil, fmt.Errorf("failed to get game")
 	}
 
 	player, err := game.FindPlayerByUserId(claim.UserID)
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to find player: %w", err)
-	}
-
-	if player != nil {
+	if err == nil && player != nil {
 		gc.publisher.PublishToRoom(game.ID, string(aggregates.GameUpdate), game)
 		return game, nil
-	}
-
-	player, err = aggregates.NewPlayer(claim)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create player: %w", err)
-	}
-
-	game.AddPlayer(player)
-
-	_, err = gc.gameRepository.Update(game)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to update game: %w", err)
 	}
 
 	eventPayload, err := json.Marshal(aggregates.NewGameEventPayloadJoinedGame(game.ID, claim.UserID, claim))
@@ -131,53 +138,156 @@ func (gc *GameCoordinator) Join(gameId string, claim *entities.CustomClaim) (*ag
 		eventPayload,
 	)
 
+	err = game.ApplyEvent(event)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply joined game event: %w", err)
+	}
+
+	gc.publisher.PublishToRoom(game.ID, string(aggregates.GameUpdate), game)
+
 	err = gc.eventRepository.AppendEvent(event)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to append joined game event: %w", err)
 	}
 
-	gc.publisher.PublishToRoom(game.ID, string(aggregates.GameUpdate), game)
+	_, err = gc.gameRepository.Update(game)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to persist game update: %w", err)
+	}
 
 	return game, nil
 }
 
-func (gc *GameCoordinator) BeginGame(gameId string, claim *entities.CustomClaim) {
-	// g, err := gc.gameRepository.GetByID(gameId)
+func (gc *GameCoordinator) BeginGame(gameId string, claim *entities.CustomClaim) error {
+	g := gc.getGameByID(gameId)
 
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get game: %w", err)
-	// }
+	if g == nil {
+		return fmt.Errorf("failed to get game")
+	}
 
-	// if !g.IsInSetup() {
-	// 	return fmt.Errorf("game %s is not in setup status", gameId)
-	// }
+	if !g.IsInSetup() {
+		return fmt.Errorf("game %s is not in setup status", gameId)
+	}
 
-	// payload, err := json.Marshal(aggregates.NewGameEventPayloadGameBegins(gameId, claim.UserID))
+	player, err := g.FindPlayerByUserId(claim.UserID)
 
-	// if err != nil {
-	// 	return fmt.Errorf("failed to marshal game begins payload: %w", err)
-	// }
+	if err != nil {
+		return fmt.Errorf("failed to find player: %w", err)
+	}
 
-	// event := events.NewGameEvent(
-	// 	gameId,
-	// 	events.EventGameBegins,
-	// 	payload,
-	// )
+	if !player.IsOwner {
+		return fmt.Errorf("player %s is not the owner of the game", player.ID)
+	}
 
-	// err = g.ApplyEvent(event)
+	payload, err := json.Marshal(events.NewGameEventPayloadGameBegins(gameId, player.ID))
 
-	// if err != nil {
-	// 	return fmt.Errorf("failed to apply game begins event: %w", err)
-	// }
+	if err != nil {
+		return fmt.Errorf("failed to marshal game begins payload: %w", err)
+	}
 
-	// err = gc.eventRepository.AppendEvent(event)
+	event := aggregates.NewGameEvent(
+		gameId,
+		aggregates.EventGameBegins,
+		payload,
+	)
 
-	// if err != nil {
-	// 	return fmt.Errorf("failed to append game begins event: %w", err)
-	// }
+	err = g.ApplyEvent(event)
 
-	// return nil
+	if err != nil {
+		return fmt.Errorf("failed to apply game begins event: %w", err)
+	}
+
+	err = gc.eventRepository.AppendEvent(event)
+
+	if err != nil {
+		return fmt.Errorf("failed to append game begins event: %w", err)
+	}
+
+	return nil
+}
+
+func (gc *GameCoordinator) ContinueRound(gameId string, claim *entities.CustomClaim) error {
+	g := gc.getGameByID(gameId)
+
+	if g == nil {
+		return fmt.Errorf("failed to get game")
+	}
+
+	if !g.IsInProgress() {
+		return fmt.Errorf("game %s is not in progress status", gameId)
+	}
+
+	if g.ShouldShuffle() {
+		shufflePayload, err := json.Marshal(aggregates.NewGameEventPayloadShuffle(gameId, time.Now().UnixNano(), uuid.New().String()))
+
+		if err != nil {
+			return fmt.Errorf("failed to marshal shuffle payload: %w", err)
+		}
+
+		shuffleEvent := aggregates.NewGameEvent(
+			gameId,
+			aggregates.EventShuffle,
+			shufflePayload,
+		)
+
+		err = g.ApplyEvent(shuffleEvent)
+
+		if err != nil {
+			return fmt.Errorf("failed to create shuffle event: %w", err)
+		}
+	}
+
+	playerCards := make(map[string]string)
+
+	unusedWhiteCards := g.GetUnplayedWhiteCards()
+	unusedBlackCards := g.GetUnplayedBlackCards()
+
+	// Give each player a white card
+	for _, player := range g.Players {
+		if player.IsJudge {
+			continue
+		}
+
+		playerCards[player.UserID] = unusedWhiteCards[0].ID
+		unusedWhiteCards = unusedWhiteCards[1:]
+	}
+
+	payload, err := json.Marshal(aggregates.NewGameEventPayloadGameRoundContinuedWithCards(gameId, claim.UserID, playerCards, unusedBlackCards[0].ID))
+
+	if err != nil {
+		return fmt.Errorf("failed to marshal game round continued with cards payload: %w", err)
+	}
+
+	event := aggregates.NewGameEvent(
+		gameId,
+		aggregates.EventRoundContinued,
+		payload,
+	)
+
+	err = g.ApplyEvent(event)
+
+	if err != nil {
+		return fmt.Errorf("failed to apply game round continued event: %w", err)
+	}
+
+	err = gc.eventRepository.AppendEvent(event)
+
+	if err != nil {
+		return fmt.Errorf("failed to append game round continued event: %w", err)
+	}
+
+	_, err = gc.gameRepository.Update(g)
+
+	if err != nil {
+		return fmt.Errorf("failed to update game: %w", err)
+	}
+
+	gc.publisher.PublishToRoom(gameId, string(aggregates.GameUpdate), g)
+
+	return nil
 }
 
 func (gc *GameCoordinator) Leave(gameId string, claim *entities.CustomClaim) {

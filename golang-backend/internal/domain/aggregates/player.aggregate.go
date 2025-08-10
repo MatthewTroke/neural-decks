@@ -4,11 +4,15 @@ import (
 	"cardgame/internal/domain/entities"
 	"cardgame/internal/domain/valueobjects"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type Player struct {
+	ID            string                  `json:"id"`
 	Score         int                     `json:"score"`
 	Role          valueobjects.PlayerRole `json:"role"`
+	IsOwner       bool                    `json:"is_owner"`
 	UserID        string                  `json:"user_id"`
 	Name          string                  `json:"name"`
 	Image         string                  `json:"image"`
@@ -28,8 +32,10 @@ func NewPlayer(claim *entities.CustomClaim) (*Player, error) {
 	}
 
 	return &Player{
+		ID:            uuid.NewString(),
 		Score:         0,
 		Role:          role,
+		IsOwner:       false,
 		UserID:        claim.UserID,
 		Name:          claim.Name,
 		Image:         claim.Image,
@@ -40,6 +46,12 @@ func NewPlayer(claim *entities.CustomClaim) (*Player, error) {
 		IsRoundWinner: false,
 		IsGameWinner:  false,
 	}, nil
+}
+
+func (p *Player) SetIsOwner(isOwner bool) *Player {
+	p.IsOwner = isOwner
+
+	return p
 }
 
 func (p *Player) SetIsGameWinner(isGameWinner bool) *Player {

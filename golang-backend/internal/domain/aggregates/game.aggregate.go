@@ -2,6 +2,7 @@ package aggregates
 
 import (
 	"cardgame/internal/domain/entities"
+	"cardgame/internal/domain/events"
 	"cardgame/internal/domain/valueobjects"
 	"errors"
 	"fmt"
@@ -79,18 +80,6 @@ func NewGameEventPayloadJudgeChoseWinningCard(gameID string, cardID string) Game
 	return GameEventPayloadJudgeChoseWinningCard{
 		GameID: gameID,
 		CardID: cardID,
-	}
-}
-
-type GameEventPayloadGameBegins struct {
-	GameID string `json:"game_id"`
-	UserID string `json:"user_id"`
-}
-
-func NewGameEventPayloadGameBegins(gameID string, userID string) GameEventPayloadGameBegins {
-	return GameEventPayloadGameBegins{
-		GameID: gameID,
-		UserID: userID,
 	}
 }
 
@@ -226,6 +215,7 @@ type Game struct {
 	Status             valueobjects.GameStatus  `json:"status"`
 	Players            []*Player                `json:"players"`
 	WhiteCards         []*entities.Card         `json:"white_cards"`
+	UsedCards          []*entities.Card         `json:"used_cards"`
 	BlackCard          *entities.Card           `json:"black_card"`
 	RoundStatus        valueobjects.RoundStatus `json:"round_status"`
 	CurrentGameRound   int                      `json:"current_game_round"`
@@ -247,6 +237,7 @@ func NewGame(
 	status valueobjects.GameStatus,
 	players []*Player,
 	whiteCards []*entities.Card,
+	usedCards []*entities.Card,
 	blackCard *entities.Card,
 	roundStatus valueobjects.RoundStatus,
 	currentGameRound int,
@@ -267,6 +258,7 @@ func NewGame(
 		Status:             status,
 		Players:            players,
 		WhiteCards:         whiteCards,
+		UsedCards:          usedCards,
 		BlackCard:          blackCard,
 		RoundStatus:        roundStatus,
 		CurrentGameRound:   currentGameRound,
@@ -286,6 +278,81 @@ func (g *Game) Lock() {
 
 func (g *Game) Unlock() {
 	g.Mutex.RUnlock()
+}
+
+func (g *Game) ClearUsedCards() {
+	g.Lock()
+	defer g.Unlock()
+
+	g.UsedCards = []*entities.Card{}
+}
+
+func (g *Game) ShouldShuffle() bool {
+	g.Lock()
+	defer g.Unlock()
+
+	availableWhiteCards := len(g.GetUnplayedWhiteCards())
+	availableBlackCards := len(g.GetUnplayedBlackCards())
+	playersNeedingCards := len(g.GetNonJudgePlayers())
+
+	return availableWhiteCards < playersNeedingCards || availableBlackCards < 1
+}
+
+func (g *Game) GetNonJudgePlayers() []*Player {
+	g.Lock()
+	defer g.Unlock()
+
+	nonJudgePlayers := []*Player{}
+
+	for _, player := range g.Players {
+		if !player.IsJudge {
+			nonJudgePlayers = append(nonJudgePlayers, player)
+		}
+	}
+
+	return nonJudgePlayers
+}
+
+func (g *Game) GetUnplayedBlackCards() []*entities.Card {
+	g.Lock()
+	defer g.Unlock()
+
+	usedCardsMap := make(map[string]*entities.Card)
+
+	for _, card := range g.UsedCards {
+		usedCardsMap[card.ID] = card
+	}
+
+	unusedBlackCards := []*entities.Card{}
+
+	for _, card := range g.Collection.Cards {
+		if card.Type == "Black" && usedCardsMap[card.ID] == nil {
+			unusedBlackCards = append(unusedBlackCards, card)
+		}
+	}
+
+	return unusedBlackCards
+}
+
+func (g *Game) GetUnplayedWhiteCards() []*entities.Card {
+	g.Lock()
+	defer g.Unlock()
+
+	usedCardsMap := make(map[string]*entities.Card)
+
+	for _, card := range g.UsedCards {
+		usedCardsMap[card.ID] = card
+	}
+
+	unusedWhiteCards := []*entities.Card{}
+
+	for _, card := range g.Collection.Cards {
+		if card.Type == "White" && usedCardsMap[card.ID] == nil {
+			unusedWhiteCards = append(unusedWhiteCards, card)
+		}
+	}
+
+	return unusedWhiteCards
 }
 
 func (g *Game) SetStatus(status valueobjects.GameStatus) {
@@ -517,7 +584,6 @@ func (g *Game) PickNewJudge() error {
 	return nil
 }
 
-// THERE IS A BUG HERE. THIS SHOULD BE FIND PLAYER BY USER ID AND GAME ID.
 func (g *Game) FindPlayerByUserId(userId string) (*Player, error) {
 	g.Lock()
 	defer g.Unlock()
@@ -622,66 +688,6 @@ func (g *Game) CheckForWinner() *Player {
 	return nil
 }
 
-func (g *Game) Clone() *Game {
-	g.Lock()
-	defer g.Unlock()
-
-	cloned := &Game{
-		ID:               g.ID,
-		Name:             g.Name,
-		WinnerCount:      g.WinnerCount,
-		MaxPlayerCount:   g.MaxPlayerCount,
-		Status:           g.Status,
-		RoundStatus:      g.RoundStatus,
-		CurrentGameRound: g.CurrentGameRound,
-		CreatedAt:        g.CreatedAt,
-		UpdatedAt:        g.UpdatedAt,
-		DeletedAt:        g.DeletedAt,
-	}
-
-	// Clone collection
-	if g.Collection != nil {
-		cloned.Collection = g.Collection.Clone()
-	}
-
-	// Clone players
-	if g.Players != nil {
-		cloned.Players = make([]*Player, len(g.Players))
-		for i, player := range g.Players {
-			cloned.Players[i] = player.Clone()
-		}
-	}
-
-	// Clone white cards
-	if g.WhiteCards != nil {
-		cloned.WhiteCards = make([]*entities.Card, len(g.WhiteCards))
-		for i, card := range g.WhiteCards {
-			cloned.WhiteCards[i] = card.Clone()
-		}
-	}
-
-	// Clone black card
-	if g.BlackCard != nil {
-		cloned.BlackCard = g.BlackCard.Clone()
-	}
-
-	// Clone round winner
-	if g.RoundWinner != nil {
-		cloned.RoundWinner = g.RoundWinner.Clone()
-	}
-
-	// Clone last vacated time
-	cloned.LastVacatedAt = g.LastVacatedAt
-
-	// Clone last event time
-	cloned.LastEventAt = g.LastEventAt
-
-	// Clone next auto progress time
-	cloned.NextAutoProgressAt = g.NextAutoProgressAt
-
-	return cloned
-}
-
 func (g *Game) ApplyEvent(event *GameEvent) error {
 	g.Lock()
 	defer g.Unlock()
@@ -690,7 +696,7 @@ func (g *Game) ApplyEvent(event *GameEvent) error {
 
 	switch event.Type {
 	case EventGameBegins:
-		var payload GameEventPayloadGameBegins
+		var payload events.GameEventPayloadGameBegins
 
 		if err := json.Unmarshal(event.Payload, &payload); err != nil {
 			return fmt.Errorf("failed to unmarshal EventGameBegins payload: %w", err)
@@ -705,6 +711,7 @@ func (g *Game) ApplyEvent(event *GameEvent) error {
 			return fmt.Errorf("failed to unmarshal EventShuffle payload: %w", err)
 		}
 
+		g.ClearUsedCards()
 		g.Collection.ShuffleWithSeed(payload.Seed)
 	case EventDealCards:
 		var payload GameEventPayloadDealCards

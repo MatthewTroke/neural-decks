@@ -7,6 +7,9 @@ RUN apk add --no-cache git ca-certificates
 # Set working directory
 WORKDIR /app
 
+# Copy .env file
+COPY .env ./
+
 # Copy go mod files
 COPY go.mod go.sum ./
 
@@ -16,8 +19,8 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application from cmd/http/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/http
+# Build the application from cmd/http/server.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/http/server.go
 
 # Final stage
 FROM alpine:latest
@@ -29,7 +32,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy the binary from builder stage
-COPY --from=builder /app/main .
+COPY --from=builder /app/server .
 
 # Create logs directory
 RUN mkdir -p logs
@@ -38,4 +41,4 @@ RUN mkdir -p logs
 EXPOSE 8080
 
 # Run the application
-CMD ["./main"] 
+CMD ["./server"] 

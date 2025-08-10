@@ -9,9 +9,11 @@
             "name": "Launch Package",
             "type": "go",
             "request": "launch",
-            "mode": "test",
-            "program": "${workspaceFolder}/new/game/game_test.go",
-            "args": ["-test.v"]
+            "mode": "debug",
+            "program": "${workspaceFolder}/golang-backend/cmd/http/main.go",
+            "cwd": "${workspaceFolder}/golang-backend",
+            "envFile": "${workspaceFolder}/golang-backend/.env",
+            "args": []
         }
     ]
 }

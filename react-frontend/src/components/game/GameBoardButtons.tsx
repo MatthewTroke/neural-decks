@@ -9,7 +9,7 @@ interface ContinueRoundButtonProps {
 function ContinueRoundButton(props: ContinueRoundButtonProps) {
   const isGameInProgress = props.game.status === "InProgress";
   const isGameRoundOver =
-    props.game.round_status === "CardCzarChoseWinningCard";
+    props.game.round_status === "JudgeChoseWinningCard";
 
   const shouldRenderContinueRoundButton = isGameInProgress && isGameRoundOver;
 
@@ -91,7 +91,7 @@ export function GameButtons(props: GameButtonsProps) {
 
   const isGameInProgress = props.game.status === "InProgress";
   const isGameRoundOver =
-    props.game.round_status === "CardCzarChoseWinningCard";
+    props.game.round_status === "JudgeChoseWinningCard";
 
   const shouldRenderContinueRoundButton = isGameInProgress && isGameRoundOver;
   const shouldRenderBeginGameButton = isGameReadyToBegin && isGameInSetupState;

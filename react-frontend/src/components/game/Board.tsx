@@ -10,18 +10,18 @@ export default function Board(props: {
   const player = props.game.players.find(
     (p: any) => p.user_id === user?.user_id
   );
-  // let isCardCzar = player?.is_card_czar;
+  // let isJudge = player?.is_judge;
   // let isWhiteCardDisabled =
-  //   !isCardCzar ||
+  //   !isJudge ||
   //   !(
   //     props.game.status === "InProgress" &&
-  //     props.game.round_status === "CardCzarPickingWinningCard"
+  //     props.game.round_status === "JudgePickingWinningCard"
   //   );
 
   const hasRoundWinner =
     props.game.round_winner &&
     props.game.status === "InProgress" &&
-    props.game.round_status === "CardCzarChoseWinningCard";
+    props.game.round_status === "JudgeChoseWinningCard";
 
   let winningCard = null;
 
@@ -38,11 +38,11 @@ export default function Board(props: {
       return;
     }
 
-    if (props.game.round_status !== "CardCzarPickingWinningCard") {
+    if (props.game.round_status !== "JudgePickingWinningCard") {
       return;
     }
 
-    if (!player.is_card_czar) {
+    if (!player.is_judge) {
       return;
     }
 

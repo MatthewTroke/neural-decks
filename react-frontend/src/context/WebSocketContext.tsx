@@ -34,6 +34,7 @@ export function WebSocketProvider({ children, gameId, onMessage }: WebSocketProv
       }
       
       try {
+        console.log('Event data:', event);
         const message = JSON.parse(event.data);
         console.log('Parsed message:', message);
         onMessage(message);

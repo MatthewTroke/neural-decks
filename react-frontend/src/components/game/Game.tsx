@@ -45,8 +45,11 @@ export default function GameComponent() {
     type: string;
     payload: any;
   }) => {
+
+    
     switch (message.type) {
       case "GAME_UPDATE":
+        debugger;
         setGame(message.payload);
         break;
       case "CHAT_MESSAGE":
@@ -136,7 +139,7 @@ export default function GameComponent() {
   const handlePickWinningCard = (cardId: string) => {
     sendMessage(
       JSON.stringify({
-        type: "CardCzarChoseWinningCard",
+        type: "JudgeChoseWinningCard",
         payload: {
           card_id: cardId,
           game_id: gameId,

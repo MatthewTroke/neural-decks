@@ -15,8 +15,8 @@ export default function Hand(props: {
   const { user } = useAuth();
 
   const player = props.game.players.find((p) => p.user_id === user?.user_id);
-  const playerIsCardCzar =
-    props.game.players.find((p) => p.is_card_czar)?.user_id === player?.user_id;
+  const playerIsJudge =
+    props.game.players.find((p) => p.is_judge)?.user_id === player?.user_id;
 
   if (!player) {
     return null;
@@ -26,7 +26,7 @@ export default function Hand(props: {
     return null
   }
 
-  const disabled = Boolean(player.placed_card) || playerIsCardCzar;
+  const disabled = Boolean(player.placed_card) || playerIsJudge;
 
   const onSelectCard = (cardId: string) => {
     const card = player.deck.find((card: Card) => card.id === cardId);
@@ -68,9 +68,9 @@ export default function Hand(props: {
         </h3>
 
         <div className="flex gap-2 mb-8">
-          {playerIsCardCzar ? (
+          {playerIsJudge ? (
             <span className="text-center">
-              You are the Card Czar! Choose a winning card.
+              You are the Judge! Choose a winning card.
             </span>
           ) : (
             <>

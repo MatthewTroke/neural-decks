@@ -8,21 +8,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
-      - REDIS_PASSWORD=
-      - REDIS_URL=redis://redis:6379
-      - DATABASE_DSN=postgresql://postgres:password@neural-decks-postgres-dev:5432/neural_decks
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=neural_decks
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
     volumes:
-      - ./golang-backend/web:/app
+      - ./golang-backend:/app
+      - ./golang-backend/.env.docker:/app/.env
       - ./golang-backend/.air.toml:/app/.air.toml
     depends_on:
       redis:

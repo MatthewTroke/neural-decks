@@ -34,13 +34,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("❌ [FRONTEND] Logout error:", error);
     } finally {
       setUser(null);
-      Cookies.remove("neural_decks_jwt");
+      Cookies.remove("neural_decks_access_token");
     }
   };
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = Cookies.get("neural_decks_jwt");
+      const token = Cookies.get("neural_decks_access_token");
 
       if (!token) {
         setUser(null);
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // If token is expired, clear user state (backend will handle refresh)
         if (decodedToken.exp && (decodedToken.exp - currentTime) <= 0) {
           setUser(null);
-          Cookies.remove("neural_decks_jwt");
+          Cookies.remove("neural_decks_access_token");
         } else {
           // Token is still valid
           setUser(decodedToken as User);
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
         console.error("❌ [FRONTEND] Token decode error:", error);
         setUser(null);
-        Cookies.remove("neural_decks_jwt");
+        Cookies.remove("neural_decks_access_token");
       }
       
       setLoading(false);

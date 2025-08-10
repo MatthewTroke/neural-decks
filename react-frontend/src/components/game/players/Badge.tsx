@@ -23,7 +23,7 @@ export default function PlayerBadge(props: PlayerBadgeProps) {
     );
   }
 
-  if (!props.player.is_card_czar && !props.player.placed_card) {
+  if (!props.player.is_judge && !props.player.placed_card) {
     return (
       <div>
         <Badge
@@ -40,7 +40,7 @@ export default function PlayerBadge(props: PlayerBadgeProps) {
     );
   }
 
-  if (props.player.is_card_czar) {
+  if (props.player.is_judge) {
     return (
       <div>
         <Badge variant="default" className={cn("text-xs animate-pulse")}>

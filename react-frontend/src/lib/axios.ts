@@ -15,7 +15,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Clear the access token cookie
-      Cookies.remove('neural_decks_jwt');
+      Cookies.remove('neural_decks_access_token');
       
       // Redirect to login page
       window.location.href = '/login';

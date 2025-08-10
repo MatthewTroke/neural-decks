@@ -3,8 +3,8 @@ type CardType = "Black" | "White";
 type RoundStatus =
   | "Waiting"
   | "PlayersPickingCard"
-  | "CardCzarPickingWinningCard"
-  | "CardCzarChoseWinningCard";
+  | "JudgePickingWinningCard"
+  | "JudgeChoseWinningCard";
 
 type GameStatus = "Setup" | "InProgress" | "Finished";
 
@@ -38,8 +38,8 @@ interface Player {
   name: string;
   image?: string; // Optional image field
   deck: Card[]; // Array of cards in the player's deck
-  is_card_czar: boolean;
-  was_card_czar: boolean;
+  is_judge: boolean;
+  was_judge: boolean;
   placed_card?: Card | null; // Nullable placed card
   is_round_winner: boolean;
   is_game_winner: boolean;
